@@ -1,294 +1,548 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Bitcoin Reader</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.1/css/bulma.min.css">
-    <link rel="stylesheet" href="css/dataTables-bulma.css">
-    <link rel="stylesheet" href="css/reset.css">
-    <link rel="stylesheet" href="./css/styles.css">
-    <link rel="stylesheet" href="./css/prism.css">
+  <title>Bitcoin P2P Explorer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  
+  <!-- DataTables CDN -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.min.css">
+
+  <!-- Tailwind Temporary -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  
+  <style type="text/tailwindcss">
+    
+    @theme {
+      --color-mint: #97F0E5;
+      --color-lavender: #C9A9FF;
+      --color-lime: #CEFF6A;
+      --color-pink: #FF7AD9;
+      --color-yellow: #FFE272;
+      --color-jet: #0A0A0A;
+      --color-green: #bdfb99;
+    }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Override tailwind border radius */
+    * {
+      border-radius: 0 !important;
+    }
+
+
+  </style>
+
 </head>
-<body>
-  <div class="bg"> </div> <!-- background image and styling -->
-  
-  <div class="header-bg"></div>
-  <section class="header">
-    <div id="logo"></div>
-    <h1>[ block_reader ]</h1>
-  </section> 
-  
-  <div class="page-wrapper">  <!-- Main content page wrapper -->
-    <section class="section"> <!-- main section-->
-      <div class="dashboard">
-        <div class="left-dash">
-          <div id="node-connect" class="box">
-            <div class="field">
-              <label for="dns-seed">Select DNS Seed:</label>
-              <div class="select is-primary is-fullwidth is-small" >
-                <select name="dns-seed" class="custom-select">
-                  <option>Select a dns seed</option>
-                  <option>seed.bitcoin.sipa.be</option>
-                  <option>dnsseed.bluematt.me</option>
-                  <option>dnsseed.bitcoin.dashjr.org</option>
-                  <option>seed.bitcoinstats.com</option>
-                  <option>seed.bitcoin.jonasschnelli.ch</option>
-                </select>
-              </div>
-            </div> <!-- end field -->
 
-            <div class="field">
-              <label for="ip-address">Enter IP Address:</label>
-              <input name="ip-addresses" class="input is-primary is-small" type="text">
-            </div>
+<body class="bg-white text-jet"> 
 
-            <div class="field has-addons button-group">
-              <p class="control">
-                <button class="button is-fullwidth is-small" id="reset-button">
-                  <span>Reset</span>
-                </button>
-              </p>
-              <p class="control">
-                <button class="button is-fullwidth is-small" id="connect-button">
-                  <span>Connect</span>
-                </button>
-              </p>
-              <p class="control">
-                <button class="button is-fullwidth is-small" id="disconnect-button">
-                  <span>Disconnect</span>
-                </button>
-              </p>
-            </div>
-          </div> <!-- end box -->
-        </div> <!-- end left-dash -->
-        
-        <div class="right-dash">
-          <div id="message-box">
-            <div id="block-msg" class="box">
-              <p>Block Count: <span id="blockCountValue">0</span></p>
-            </div>
-            <div id="tx-msg" class="box">
-              <p>Tx Count: <span id="txCountValue">0</span></p>
-            </div>
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-jet/10">
+    <!-- Nav Bar -->
+    <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 bg-jet"></div>
+        <span class="font-semibold tracking-wider text-xl uppercase">BitDot</span>
+      </div>
+
+      <!-- Nav Links -->
+      <nav class="hidden md:flex items-center gap-6 text-xs uppercase tracking-wider">
+        <a href="https://github.com/lauraFortune/bitcoin-explorer" target="_blank" rel="noreferrer" class="hover:text-jet/60 transition-colors">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section - White BG -->
+  <section class="bg-white border-b border-jet/10">
+    <div class="max-w-7xl mx-auto px-6 py-16">
+      <div class="max-w-3xl">
+        <h1 class="text-5xl md:text-6xl font-bold mb-4 leading-tight">
+          BITCOIN P2P EXPLORER
+        </h1>
+        <p class="text-lg text-jet/70 mb-2">
+          Connect to Bitcoin nodes. Watch the P2P protocol in real time.
+        </p>
+        <p class="text-sm text-jet/50">
+          Learn Bitcoin by doing · No setup required
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gradient Section -->
+  <section class="border-y border-jet/10 py-12 bg-gradient-to-r from-lime via-mint to-lavender">
+    <div class="max-w-7xl mx-auto px-6">
+      <!-- Card -->
+      <div class="bg-white border-4 border-jet/20 p-8 max-w-3xl">
+        <p class="text-xs uppercase tracking-wider text-jet/60 mb-2"> How it works</p>
+        <h2 class="text-3xl font-bold mb-4">Connect to the Network</h2>
+
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <span class="font-bold text-jet/80">1.</span>
+            <p class="text-jet/70"><strong>Select a node</strong> — Choose a DNS seed or enter an IP address</p>
+          </div>  
+          <div class="flex gap-3">
+            <span class="font-bold text-jet/80">2.</span>
+            <p class="text-jet/70"><strong>Connect</strong> — Wait for the P2P handshake in the activity log</p>
           </div>
-          <div id="node-stats" class="box">
-            <p>Node Info</p>
+          <div class="flex gap-3">
+            <span class="font-bold text-jet/80">3.</span>
+            <p class="text-jet/70"><strong>Watch</strong> — Blocks, transactions, and protocol messages stream live</p>
           </div>
-        </div> <!-- end right-dash -->        
-      </div> <!-- end dashboard -->
-
-      <div class="block"></div>
-      <p class="block ">Placeholder for some interesting data, or information on how to read the tabs/tables</p>
+        </div>
       
-      <div class="tab-container">
-        <div class="tab-group box">
-          <!-- Tabs Navigation -->
-          <div class="tabs tab-btns-container">
-            <button class="tab-button" id="block-button" data-tab="block-messages">
-              <h2>~/block-messages</h2>
-            </button>
-            <button class="tab-button" id="tx-button" data-tab="tx-messages">
-              <h2>~/tx-messages</h2>
-            </button>
-            <button class="tab-button" id="terminal-button" data-tab="btcStream">
-              <h2>>_ Bitcoin Terminal</h2>
-            </button>
-            <button class="tab-button" id="dummy-button"></button>
-          </div>
- 
-          <!-- Tab content -->
-          <!-- 1. Block Messages-->
-          <div id="block-messages" class="tab-content">
-              <table id="blockTable" class="table is-fullwidth is-striped">
-                <thead>
-                  <tr>
-                    <th>block-version</th>
-                    <th>block_hash</th>
-                    <th>timestamp</th>
-                    <th>tx_count</th>
-                    <th>difficulty</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Connection Section - White BG -->
+  <section class="bg-white border-b border-jet/10">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <div class="bg-white border-4 border-jet/20 p-6">
+        
+        <!-- Connection Card -->
+        <div class="mb-6">
+          <h3 class="text-sm uppercase tracking-wider text-jet/60 mb-1">Connect to a Node</h3>
+          <p class="text-xs text-jet/40">Choose a DNS seed to find available nodes, or connect to a specific IP address</p>
+        </div>
+
+
+        <!-- Fields -->
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+          
+          <!-- Left DNS Dropdown -->
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-jet/60 mb-2">DNS Seed</label>
+            <select id="dns-seed" class="w-full px-4 py-3 bg-white border-2 border-jet/20 text-jet focus:border-jet transition-colors">
+              <option value="" selected>Select a DNS seed</option>
+              <option value="seed.bitcoin.sipa.be">seed.bitcoin.sipa.be</option>
+              <option value="dnsseed.bluematt.me">dnsseed.bluematt.me</option>
+              <option value="dnsseed.bitcoin.dashjr.org">dnsseed.bitcoin.dashjr.org</option>
+              <option value="seed.bitcoinstats.com">seed.bitcoinstats.com</option>
+              <option value="seed.bitcoin.jonasschnelli.ch">seed.bitcoin.jonasschnelli.ch</option>
+            </select>
           </div>
           
-          <!-- 2. TX Messages-->
-          <div id="tx-messages" class="tab-content is-hidden">
-            <table id="txTable" class="table is-fullwidth is-striped">
+          <!-- Right IP Input -->
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-jet/60 mb-2">IP Address</label>
+            <input id="ip-address" type="text" placeholder="e.g. 192.0.2.113" class="w-full px-4 py-3 border-2 border-jet/20 text-jet bg-white text-sm font-mono focus:border-jet transition-colors">
+          </div>
+
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-3">
+          <button id="connect-btn" type="button" class="px-8 py-3 text-white text-xs uppercase tracking-wider font-semibold transition-colors bg-jet hover:bg-jet/80 disabled:opacity-50 disabled:pointer-events-none">Connect</button>
+          <button id="disconnect-btn" type="button" class="px-8 py-3 border-2 border-jet/20 text-jet text-xs uppercase tracking-wider font-semibold hover:border-jet transition-colors">Disconnect</button>
+          <button id="reset-button" type="button" class="px-8 py-3 border-2 border-jet/20 text-jet text-xs uppercase tracking-wider font-semibold hover:border-jet transition-colors">Reset</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+  
+  <!-- Stats Section - White BG -->
+  <section class="max-w-7xl mx-auto px-6 py-8">
+    <div class="grid md:grid-cols-3 gap-4">
+
+      <!-- Connection Card -->
+      <div id="connection-card" class="bg-white border-4 border-jet/20 p-6">
+        
+        <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Connection</div>
+      
+        <div id="status" role="status" aria-live="polite" class="inline-flex items-center gap-3 text-2xl font-bold font-mono uppercase leading-none text-jet mb-2">
+          <span id="status-dot" aria-hidden="true" class="inline-block size-5 shrink-0 bg-pink"></span>
+          <span id="status-label">Disconnected</span>
+        </div>
+
+        <div id="connection-node" class="text-xs text-jet/60 font-mono mb-1">Not Connected</div>
+        <div id="connection-ip" class="text-xs text-jet/40 font-mono">-</div>
+      </div>
+
+      <!-- Blocks Card -->
+      <div class="bg-white border-4 border-jet/20 p-6">
+        <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Blocks</div>
+        <div id="blockCounter" class="text-5xl font-bold font-mono text-jet">0</div>
+      </div>
+
+      <div class="bg-white border-4 border-jet/20 p-6">
+        <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Transactions</div>
+        <div id="txCounter" class="text-5xl font-bold font-mono text-jet">0</div>
+      </div>
+    
+    </div>
+  </section>
+
+  <!-- Tabs Section - Data Tables -->
+  <section class="max-w-7xl mx-auto px-6 py-8">
+    <div class="bg-white border-4 border-jet/20">
+
+      <!-- Tab Buttons -->
+      <div class="bg-white flex border-b-2 border-jet/20">
+        <button id="blocks-tab" data-tab="blocks-content" class="tab-btn px-6 py-4 text-xs uppercase tracking-wider border-b-4 border-jet text-jet font-semibold">
+          Blocks
+        </button>
+        <button id="transactions-tab" data-tab="transactions-content" class="tab-btn px-6 py-4 text-xs uppercase tracking-wider border-b-4 border-transparent text-jet/60 hover:text-jet">
+          Transactions
+        </button>
+        <div class="ml-auto px-6 py-4">
+          <button class="text-xs text-jet/40 hover:text-jet uppercase tracking-wider">[?] About </button>
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="p-6 bg-white">
+        <!-- Tab 1: Block Messages -->
+        <div id="blocks-content" class="tab-content">
+          <div class="overflow-x-auto">
+            <table id="blockTable" class="w-full text-sm">
               <thead>
-                <tr>
-                  <th>version</th>
-                  <th>byte_size</th>
-                  <th>in_count</th>
-                  <th>out_count</th>
-                  <th>lock_time</th>
+                <tr class="border-b-2 border-jet/10 text-left">
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Version</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Block Hash</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Timestamp</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">TX Count</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Difficulty</th>
                 </tr>
               </thead>
-              <tbody></tbody>
+              <tbody class="font-mono text-xs"></tbody>
             </table>
           </div>
+        </div>
 
-          <!-- 3. Console -->
-          <div id="btcStream" class="tab-content is-hidden">
-            <pre>
-              <p> >_ Bitcoin Powershell</p>
-              <code id="streamed-data" class="language-js"></code>
-            </pre>
+        <!-- Tab 2: TX Messages -->
+        <div id="transactions-content" class="tab-content hidden">
+          <div class="overflow-x-auto">
+            <table id="txTable" class="w-full text-sm">
+              <thead>
+                <tr class="border-b-2 border-jet/10 text-left">
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Version</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Byte Size</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">In Count</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Out Count</th>
+                  <th class="pb-3 text-xs uppercase tracking-wider text-jet/60 font-semibold">Lock Time</th>
+                </tr>
+              </thead>
+              <tbody class="font-mono text-xs"></tbody>
+            </table>
           </div>
-        </div> <!-- end tab-group -->
-      </div> <!-- end row-three -->
-    </section> <!-- end main section -->
-  </div> <!-- end wrapper container -->
+        </div>
+      </div>
 
-<!-- JavaScript Libraries -->
-<script src="./js/prism.js"></script>
-<script src="./js/script.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="./js/dataTables.js"></script>
-<script src="/socket.io/socket.io.js"></script>
+    </div>
+  </section>
 
-<!-- Custom JavaScript -->
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('On load do this....');
+  <!-- Collapsible Console - Black BG -->
+  <section class="max-w-7xl mx-auto px-6 pb-16">
+    <div class="border-4 border-jet/20">
+      
+      <!-- Console Header -->
+      <button id="console-toggle" class="w-full px-6 py-4 flex items-center justify-between bg-jet border-b-2 border-jet/20 transition-colors">
+        <div class="flex items-center gap-3">
+          <span id="console-chevron" class="transition-transform text-mint">▶</span>
+          <span class="text-xs uppercase tracking-wider text-white/80">Activity Log</span>
+          <span class="text-xs text-white/40">[Click to expand]</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-xs font-mono uppercase text-green">● Live</span>
+        </div>
+      </button>
+    </div>
 
-    // tab elements
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const preElement = document.querySelector('pre'); // code container
-    const codeBlock = document.getElementById('streamed-data');
-    // dashboard elements
-    const connectButton = document.getElementById('connect-button');
-    const disconnectButton = document.getElementById('disconnect-button');
-    const resetButton = document.getElementById('reset-button');
-    const blockCountValue = document.getElementById('blockCountValue');
-    const txCountValue = document.getElementById('txCountValue');
+    <!-- Console Content -->
+    <div id="console-wrapper" class="hidden">
+      <div id="console-output" class="bg-jet text-white p-6 font-mono text-xs max-h-64 overflow-y-auto">
+        <!-- Dynamic Feed -->
+      </div>
+    </div>
+  </section>
 
-    // DataTables Setup
-    const tableOptions = {
-      paging: true,
-      scrollCollapse: true,
-      scrollY: 280,
-    };
-    
-    const txTable = new DataTable('#txTable', tableOptions);
-    const blockTable = new DataTable('#blockTable', tableOptions);
+  <footer class="border-t-4 border-jet/20 text-white bg-jet">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      
+      <div class="grid md:grid-cols-3 gap-8 text-xs">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-4 h-4 bg-white"></div>
+            <span class="uppercase tracking-wider font-semibold">BitDot</span>
+          </div>
+          <p class="text-white/40 leading-relaxed">
+            Bitcoin Protocol Explorer.
+            <br> Watch the network in real-time.</p>
+        </div>
+        
+        <div>
+          <h4 class="uppercase tracking-wider text-white/60 mb-3">Resources</h4>
+          <ul class="space-y-2 text-white/40">
+            <li>
+              <a href="https://developer.bitcoin.org/" target="_blank" rel="noreferrer" class="hover:text-white">
+                Bitcoin Developer Docs
+              </a>
+            </li>
+            <li>
+              <a href="https://en.bitcoin.it/wiki/Protocol_documentation" target="_blank" rel="noreferrer" class="hover:text-white">
+                Bitcoin P2P Protocol
+              </a>
+            </li>
+            <li>
+              <a href="https://learnmeabitcoin.com" target="_blank" rel="noreferrer" class="hover:text-white">Learn Me a Bitcoin</a>
+            </li>
+            <li>
+              <a href="https://github.com/jimmysong/programmingbitcoin" target="_blank" rel="noreferrer" class="hover:text-white">Programming Bitcoin</a>
+            </li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="uppercase tracking-wider text-white/60 mb-3">Built With</h4>
+          <ul class="space-y-2 text-white/40">
+            <li>Node.js</li>
+            <li>JavaScript</li>
+            <li>Socket.IO</li>
+          </ul>
+        </div>
+      </div>
 
-    // Tab Setup
-    const setActiveTab = (selectedTabId) => {
-      tabButtons.forEach(btn => {
-        btn.classList.toggle('is-active', btn.id === selectedTabId);
-      });
+      <div class="border-t border-white/10 mt-8 pt-6 text-center text-xs text-white/30">
+        <p>BitDot · 2025</p>
+      </div>
 
-      tabContents.forEach(content => {
-        const isTargetContent = content.id === document.getElementById(selectedTabId).getAttribute('data-tab');
-        content.classList.toggle('is-hidden', !isTargetContent);
+    </div>
+  </footer>
 
-        // redraw dataTables to ensure properly aligned and updated on click
-        if (isTargetContent) {
-          if (content.id === 'block-messages') {
-            blockTable.columns.adjust().draw();
-          } else if (content.id === 'tx-messages') {
-            txTable.columns.adjust().draw();
-          }
+  <!-- JS Libraries -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Custom JS -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      /*
+      * STATE VARIABLES
+      */
+     
+      // Counters
+      let blocks = 0;           // Block Count
+      let transactions = 0;     // TX Count
+
+     
+      /*
+      * DOM ELEMENTS
+      */
+     
+      // Connection Section
+      const dnsSeedSelect = document.getElementById('dns-seed');
+      const ipAddressInput = document.getElementById('ip-address');
+      const connectBtn = document.getElementById('connect-btn');
+      const disconnectBtn = document.getElementById('disconnect-btn');
+      const resetButton = document.getElementById('reset-button');
+      // Stats Section
+      const blockCounter = document.getElementById('blockCounter');
+      const txCounter = document.getElementById('txCounter');
+      const statusDot = document.getElementById('status-dot');
+      const statusLabel = document.getElementById('status-label');
+      // Tabs Section
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+      const consoleOutput = document.getElementById('console-output');
+      // Console Section
+      const toggleBtn = document.getElementById('console-toggle');
+      const consoleWrapper = document.getElementById('console-wrapper');
+      const chevron = document.getElementById('console-chevron');
+      
+     
+      /*
+      * DATATABLES
+      */
+     
+      // DataTables Setup
+      const tableOptions = {
+        paging: true,
+        pageLength: 10,
+        ordering: true,
+        searching: true,
+        info: true,
+        lengthChange: true,
+      };
+      // Initialise Tables
+      const blockTable = new DataTable('#blockTable', tableOptions);    
+      const txTable = new DataTable('#txTable', tableOptions);      
+
+     
+      /*
+      * SOCKET.IO CONNECTION
+      */
+
+      const socket = io('http://localhost:3000', { reconnection: false });
+
+      /*
+      * SOCKET EVENT HANDLERS
+      */
+
+      socket.on('btcData', (data) => {
+        
+        // Populate Console
+        consoleOutput.textContent += JSON.stringify(data, null, 2) + '\n\n';
+        consoleOutput.scrollTop = consoleOutput.scrollHeight; 
+
+        // Populate Tables and counters
+        if (data.command === 'block') {
+          blockTable.row.add([
+            data.version,
+            data.hash,
+            data.timestamp,
+            data.transaction_count,
+            data.difficulty
+          ]).draw();
+          blocks++;         
+          blockCounter.textContent = blocks;
+        } else if (data.command === 'tx') {
+          txTable.row.add([
+            data.version,
+            data.transaction_byte_size,
+            data.inCount,
+            data.outCount,
+            data.lock_time,
+          ]).draw();
+          transactions++;    
+          txCounter.textContent = transactions;
         }
       });
 
-    }
-
-    setActiveTab('block-button'); // Set initial active tab
-
-    tabButtons.forEach(btn => { 
-      btn.addEventListener('click', () => {
-        setActiveTab(btn.id);
+      socket.on('connection-error', (err) => {
+        console.error('Connection error: ', err);
+        alert('Failed to connect to server');
       })
-    })
 
 
-    // Dashboard Setup
-    const startStreaming = () => {
-      socket.emit('start');
-    };
-
-    const stopStreaming = () => {
-      socket.emit('stop');
-    };
-
-    const reset = () => {
-      console.log('Resetting data....');
-
-      // Stop streaming BTC data
-      stopStreaming();
+      /*
+      * SELECT/INPUT EVENT HANDLERS 
+      */
       
-      // clear dataTables
-      blockTable.clear().draw();
-      txTable.clear().draw();
+      // Clear IP when DNS is selected
+      dnsSeedSelect.addEventListener('change', () => {
+        if (dnsSeedSelect.value !== '') ipAddressInput.value = '';
+        
+      });
 
-      // reset counts
-      blockCountValue.textContent = '0';
-      txCountValue.textContent = '0';
+      // Clear DNS when IP is typed
+      ipAddressInput.addEventListener('input', () => {
+        if (ipAddressInput.value) dnsSeedSelect.value = '';
+      });
+      
+      /*
+      * BUTTON EVENT HANDLERS 
+      */
 
-      // Clear console code
-      codeBlock.textContent = '';
-    };
+      // Connect Button
+      connectBtn.addEventListener('click', () => {
+        const dnsSeed = dnsSeedSelect.value.trim();
+        const ipAddress = ipAddressInput.value.trim();
 
-    connectButton.addEventListener('click', startStreaming);
-    disconnectButton.addEventListener('click', stopStreaming);
-    resetButton.addEventListener('click', reset);
+        // Validate - One field must be selected/entered to start connection
+        if (!dnsSeed && !ipAddress) {
+          alert('Please select a DNS seed or enter a valid IP address');
+          return;
+        }
+
+        socket.emit('start', { dnsSeed, ipAddress });
+        // Update Status
+        statusDot.classList.remove('bg-pink');
+        statusDot.classList.add('bg-lime');
+        statusLabel.textContent = 'Connected';
+        connectBtn.disabled = true;
+        console.log(`Connect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
+      });
+
+      
+
+      // Disconnect Button
+      disconnectBtn.addEventListener('click', () => {
+        socket.emit('stop');
+        // Update Status
+        statusDot.classList.remove('bg-lime');
+        statusDot.classList.add('bg-pink');
+        statusLabel.textContent = 'Disconnected';
+        connectBtn.disabled = false;
+        console.log(`Disconnect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
+      });
+
+      // Reset Button
+      resetButton.addEventListener('click', () => {
+        socket.emit('stop');
+        blockTable.clear().draw();
+        txTable.clear().draw();
+        consoleOutput.textContent = '';
+        blocks = 0;
+        transactions = 0;
+        blockCounter.textContent = '0';
+        txCounter.textContent = '0';
+        // Reset Connection Inputs
+        dnsSeedSelect.value = '';
+        ipAddressInput.value = '';
+        // Update Status
+        statusDot.classList.remove('bg-lime');
+        statusDot.classList.add('bg-pink');
+        statusLabel.textContent = 'Disconnected';
+        connectBtn.disabled = false;
+      });
+
+      /*
+      * CONSOLE TOGGLE HANDLER
+      */
+      toggleBtn.addEventListener('click', () => {
+        consoleWrapper.classList.toggle('hidden');
+        chevron.textContent = consoleWrapper.classList.contains('hidden') ? '▶' : '▼';
+      })
 
 
+      /*
+      * TAB EVENT HANDLERS
+      */
 
+      // Tab Switching
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const tabName = button.dataset.tab;
 
-    function addTxToTable(data) {
-      const row = txTable.row.add([
-        data.version,
-        data.transaction_byte_size,
-        data.inCount,
-        data.outCount,
-        data.lock_time
-      ]).draw();
-    }
+          // Update Buttons
+          tabButtons.forEach(btn => {
+            btn.classList.remove('border-jet', 'bg-white');
+            btn.classList.add('border-transparent');
+          });
+          button.classList.add('border-jet', 'bg-white');
+          button.classList.remove('border-transparent');
+        
+          // Update Content
+          tabContents.forEach(content => {
+            content.classList.add('hidden');
+          });
+          document.getElementById(tabName).classList.remove('hidden');
 
-    function addBlockToTable(data) {
-      const row = blockTable.row.add([
-        data.version,
-        data.hash,
-        data.timestamp,
-        data.transaction_count,
-        data.difficulty
-      ]).draw();
-    }
+          // Redraw tables
+          if (tabName === 'blocks-content') blockTable.columns.adjust().draw();
+          if (tabName === 'transactions-content') txTable.columns.adjust().draw();
+        });
+      });
 
-    function updateCount(table, countValue) {
-      countValue.textContent = table.data().count();
-    }
-
-    // Socket Seup
-    const socket = io('http://localhost:3000', { reconnection: false });
-    socket.on('btcData', (data) => {
-      // prism console logic
-      const newData = JSON.stringify(data, null, 2);
-      codeBlock.textContent += newData + '\n';
-      preElement.scrollTop = preElement.scrollHeight; // Auto-scroll to the bottom
-
-      // populate tables logic
-      if (data.command === 'block') {
-        addBlockToTable(data); // It's a block
-        updateCount(blockTable, blockCountValue);
-      } else if (data.command === 'tx'){
-        addTxToTable(data);   // It's a transaction
-        updateCount(txTable, txCountValue);
-      }
-    });
-
-    socket.on('connection_error', (err) => {
-      console.error('Connection error: ', err);
-      alert('Failed to connect to the server');
     })
+  </script>
 
-  }); // end of document loaded
-</script>
 </body>
 </html>
