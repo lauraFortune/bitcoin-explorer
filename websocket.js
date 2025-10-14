@@ -4,8 +4,9 @@ const { loadConnection: connectToNode } = require('./network/connection');
 const { setIoInstance } = require('./broadcast');
 
 let io;
+let activeSocket = null; // Store active BTC socket globally (single user support only)
 
-const websocketSetup = (server, btc_port, btc_host) => {
+const websocketSetup = (server, btc_port) => {
   try {
     io = new Server(server);
     setIoInstance(io); // set the IO instance for broadcasting
@@ -14,21 +15,37 @@ const websocketSetup = (server, btc_port, btc_host) => {
       console.log('connecting to websocket');
       logger('info', 'a user connected');
   
-      ws.on('start', async () => {
+      ws.on('start', async (data) => {
         console.log('starting websocket....');
         logger('info', 'Start streaming Bitcoin data');
-        connectToNode(btc_port, btc_host);
+
+        const { dnsSeed, ipAddress } = data;
+        const btc_host = dnsSeed || ipAddress;
+
+        // BTC Port, Host and Socket passed to load connection with
+        connectToNode(btc_port, btc_host, (socket) => { activeSocket = socket }); // Callback stores socket reference once connection succeeds
       });
   
       ws.on('stop', () => {
         console.log('stopping websocket....');
         logger('info', 'Stop streaming Bitcoin data');
-        // Stop streaming logic here
+        
+        // Close active BTC socket - if exists
+        if (activeSocket) {
+          activeSocket.cleanup();
+          activeSocket = null;
+        }
       });
   
       ws.on('disconnect', () => {
         console.log('disconnecting websocket....');
         logger('info', 'a user disconnected');
+
+        // Clean up BTC socket if user closes browser without closing connection
+        if (activeSocket) {
+          activeSocket.cleanup();
+          activeSocket = null;
+        }
       });
     }) // end on connection
   

@@ -461,6 +461,15 @@
           return;
         }
 
+        // Clear previous connection data from frontend
+        blockTable.clear().draw();
+        txTable.clear().draw();
+        consoleOutput.textContent = '';
+        blocks = 0;
+        transactions = 0;
+        blockCounter.textContent = '0';
+        txCounter.textContent = '0';
+
         socket.emit('start', { dnsSeed, ipAddress });
         // Update Status
         statusDot.classList.remove('bg-pink');
@@ -475,6 +484,7 @@
       // Disconnect Button
       disconnectBtn.addEventListener('click', () => {
         socket.emit('stop');
+        
         // Update Status
         statusDot.classList.remove('bg-lime');
         statusDot.classList.add('bg-pink');

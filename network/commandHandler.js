@@ -1,18 +1,23 @@
 const { logger } = require('../utils/logHandler');
 const { handleVersion, handleVerack, handlePing, handlePong, handleInv, handleBlock, handleTx } = require('./messageHandler');
 
-let buffer = Buffer.alloc(0);
 
 // Listen for incoming messages to complete handshake
 const commandHandler = (socket, data, address, handshakeComplete) => { 
-  buffer = Buffer.concat([buffer, data]);
+
+  // Initialise buffer for socket - if buffer doesn't already exist
+  if (!socket._buffer) socket._buffer = Buffer.alloc(0);
+
+  
+  socket._buffer = Buffer.concat([socket._buffer, data]);   // Update socket's buffer
+  let buffer = socket._buffer;                              // Create local reference
 
   while (buffer.length >= 24) {
-    const header = buffer.slice(0, 24); // Extract the header
-    const payloadLength = header.readUInt32LE(16); // Extract the payload length (4 bytes starting from the 16th byte)
+    const header = buffer.slice(0, 24);               // Extract the header
+    const payloadLength = header.readUInt32LE(16);    // Extract the payload length (4 bytes starting from the 16th byte)
 
-    if (buffer.length >= 24 + payloadLength) { // Check if complete message
-      const payload = buffer.slice(24, 24 + payloadLength); // Extract the payload
+    if (buffer.length >= 24 + payloadLength) {                // Check if complete message
+      const payload = buffer.slice(24, 24 + payloadLength);   // Extract the payload
       const command = header.slice(4, 16).toString('ascii').replace(/\0/g, '');
       
       try{
@@ -22,6 +27,7 @@ const commandHandler = (socket, data, address, handshakeComplete) => {
       }
       
       buffer = buffer.slice(24 + payloadLength); // Remove the processed message from the buffer
+      socket._buffer = buffer;                   // Save updated buffer on socket
     } else {
       // Wait for more data
       break;

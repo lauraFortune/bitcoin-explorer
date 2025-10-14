@@ -17,9 +17,14 @@ const createConnection = (port, host) => {
       logger('warn', 'Cleaning up....');
       socket.emit('handshakeBroken');
       socket.removeAllListeners();
+      socket._buffer = null;  // Clear buffer
       if (socket) {
         socket.end();
-        socket.destroy(err || new Error('ECONNRESET'));
+        if (err) {
+          socket.destroy(err);
+        } else {
+          socket.destroy(); // Gracefully destroy without error
+        }
       }
     }
 

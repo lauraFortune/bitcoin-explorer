@@ -37,12 +37,9 @@ app.use(errorHandler);
 // Import .env vars
 const PORT = process.env.PORT || 3000;
 const BTC_PORT = process.env.BTC_PORT;
-const DNS_SEED = process.env.DNS_SEED;
-// const BTC_ADDRESSES = process.env.BTC_ADDRESSES.split(',').map(address => address);
 
 // Websocket setup 
-websocketSetup(server, BTC_PORT, DNS_SEED); // pass BTC_ADDRESS/ES OR DNS_SEED for loading connection (Set up in .env)
-
+websocketSetup(server, BTC_PORT);
 
 // Start express server
 server.listen(PORT, () => {
