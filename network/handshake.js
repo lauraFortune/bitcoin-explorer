@@ -15,17 +15,20 @@ const handshake = async (socket, address) => {
     socket.write(networkVersionMessage);
     logger('info', 'Handshake: Sent Message Version:', address);
 
-    socket.once('data', (data) => {
+    const onData = (data) => {
       commandHandler(socket, data, socket.remoteAddress, handshakeComplete);
-    });
+    }
+    socket.on('data', onData);
 
     // setTimeout function - 5 seconds
     const timeout = setTimeout(() => {
       if (!handshakeComplete) { 
         logger('warn', 'Handshake: Timed out with:', address);
         handshakeComplete = false; 
+        
+        socket.off('data', onData);
         socket.cleanup(); 
-        // socket.clearDataListener(onData); // socket.off
+
         resolve(false); // promise resolves false
       }
     }, 5000); 
@@ -35,7 +38,9 @@ const handshake = async (socket, address) => {
     socket.once('performedHandshake', () => {
       handshakeComplete = true; // update handshake status
       logger('debug', 'Handshake Complete: ', handshakeComplete);
+
       clearTimeout(timeout);
+      socket.off('data', onData);
       resolve(true); // resolve promise
     });
 
