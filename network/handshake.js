@@ -27,7 +27,7 @@ const handshake = async (socket, address) => {
         handshakeComplete = false; 
         
         socket.off('data', onData);
-        socket.cleanup(); 
+        socket._cleanup(); 
 
         resolve(false); // promise resolves false
       }

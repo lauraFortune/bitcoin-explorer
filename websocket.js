@@ -19,6 +19,13 @@ const websocketSetup = (server, btc_port) => {
         console.log('starting websocket....');
         logger('info', 'Start streaming Bitcoin data');
 
+        // Clean up exist connection first
+        if (activeSocket) {
+          logger('warn', 'Cleaning up existing connection before starting new one');
+          activeSocket._cleanup();
+          activeSocket = null;
+        }
+
         const { dnsSeed, ipAddress } = data;
         const btc_host = dnsSeed || ipAddress;
 

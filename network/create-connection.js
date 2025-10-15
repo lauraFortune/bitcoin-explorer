@@ -81,7 +81,6 @@ const createConnection = (port, host) => {
     socket.once('error', (err) => { 
       logger('error', err, 'CreateConnection - Error with', host, ':', port);
       cleanup(err);
-      reject(err);
     });
 
             

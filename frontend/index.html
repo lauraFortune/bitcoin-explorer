@@ -389,46 +389,71 @@
       * SOCKET.IO CONNECTION
       */
 
+      // Socket State
+      let streamToUI = false;                // Gate to control BTC UI updates
+      let onBtcData = null;                  // btcData handler function - attach/detach
+
+
       const socket = io('http://localhost:3000', { reconnection: false });
 
       /*
       * SOCKET EVENT HANDLERS
       */
 
-      socket.on('btcData', (data) => {
+      // Attach Handler to Socket
+      const attachBtcHandler = () => {
         
-        // Populate Console
-        consoleOutput.textContent += JSON.stringify(data, null, 2) + '\n\n';
-        consoleOutput.scrollTop = consoleOutput.scrollHeight; 
+        if (onBtcData) return;              // Handler already attached, don't attach twice
+        
+        onBtcData = (data) => {
+          if (!streamToUI) return;          // If not streaming BTC data to UI -> ignore
 
-        // Populate Tables and counters
-        if (data.command === 'block') {
-          blockTable.row.add([
-            data.version,
-            data.hash,
-            data.timestamp,
-            data.transaction_count,
-            data.difficulty
-          ]).draw();
-          blocks++;         
-          blockCounter.textContent = blocks;
-        } else if (data.command === 'tx') {
-          txTable.row.add([
-            data.version,
-            data.transaction_byte_size,
-            data.inCount,
-            data.outCount,
-            data.lock_time,
-          ]).draw();
-          transactions++;    
-          txCounter.textContent = transactions;
-        }
-      });
+          // Populate Console
+          consoleOutput.textContent += JSON.stringify(data, null, 2) + '\n\n';
+          consoleOutput.scrollTop = consoleOutput.scrollHeight; 
 
+          // Populate Tables and counters
+          if (data.command === 'block') {
+            blockTable.row.add([
+              data.version,
+              data.hash,
+              data.timestamp,
+              data.transaction_count,
+              data.difficulty
+            ]).draw(false);                 // False: don't redraw entire table
+            blocks++;
+            blockCounter.textContent = blocks;
+            } else if (data.command === 'tx') {
+              txTable.row.add([
+              data.version,
+              data.transaction_byte_size,
+              data.inCount,
+              data.outCount,
+              data.lock_time,
+            ]).draw(false);
+            transactions++;    
+            txCounter.textContent = transactions;
+          }
+        };
+
+
+        socket.on('btcData', onBtcData);    // add handler to socket
+      };
+
+      // Detach Handler from Socket
+      const detachBtcHandler = () => {
+        if (!onBtcData) return;             // Handler already detached, don't try detach again
+
+        socket.off('btcData', onBtcData);   // Remove handler from socket
+        onBtcData = null;
+
+      };
+
+      // Socket Error Handler
       socket.on('connection-error', (err) => {
         console.error('Connection error: ', err);
         alert('Failed to connect to server');
-      })
+      });
 
 
       /*
@@ -470,6 +495,10 @@
         blockCounter.textContent = '0';
         txCounter.textContent = '0';
 
+        // Start streaming data to UI
+        attachBtcHandler()
+        streamToUI = true;
+
         socket.emit('start', { dnsSeed, ipAddress });
         // Update Status
         statusDot.classList.remove('bg-pink');
@@ -484,6 +513,10 @@
       // Disconnect Button
       disconnectBtn.addEventListener('click', () => {
         socket.emit('stop');
+
+        // Stop streaming data to UI
+        detachBtcHandler();
+        streamToUI = false;  
         
         // Update Status
         statusDot.classList.remove('bg-lime');
@@ -496,6 +529,11 @@
       // Reset Button
       resetButton.addEventListener('click', () => {
         socket.emit('stop');
+
+        // Stop streaming data to UI
+        detachBtcHandler();
+        streamToUI = false;
+
         blockTable.clear().draw();
         txTable.clear().draw();
         consoleOutput.textContent = '';
