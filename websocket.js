@@ -19,10 +19,14 @@ const websocketSetup = (server, btc_port) => {
         console.log('starting websocket....');
         logger('info', 'Start streaming Bitcoin data');
 
-        // Clean up exist connection first
+        // Clean up existing connection first
         if (activeSocket) {
           logger('warn', 'Cleaning up existing connection before starting new one');
-          activeSocket._cleanup();
+          try {
+            activeSocket._cleanup();
+          } catch (err) {
+            logger('error', 'Cleanup failed on start:', err.message);
+          }
           activeSocket = null;
         }
 
@@ -39,7 +43,11 @@ const websocketSetup = (server, btc_port) => {
         
         // Close active BTC socket - if exists
         if (activeSocket) {
-          activeSocket._cleanup();
+          try {
+            activeSocket._cleanup();
+          } catch (err) {
+            logger('error', 'Cleanup failed on stop:', err.message);
+          }
           activeSocket = null;
         }
       });
@@ -50,7 +58,12 @@ const websocketSetup = (server, btc_port) => {
 
         // Clean up BTC socket if user closes browser without closing connection
         if (activeSocket) {
-          activeSocket._cleanup();
+          try {
+            activeSocket._cleanup();
+          } catch (err) {
+            logger('error', 'Cleanup failed on disconnect:', err.message);
+          }
+          
           activeSocket = null;
         }
       });
