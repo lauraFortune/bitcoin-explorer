@@ -17,7 +17,7 @@ const { pingMessage } = require('../builders/messageBuilder');
       socket.on('data', (data) => commandHandler(socket, data, address, handshakeComplete));
     
       // Ping node every 30 seconds to keep connection alive
-      const pingTimer = setInterval(() => {
+      socket._pingTimer = setInterval(() => {
         try{
           const networkPingMessage = pingMessage();
           socket.write(networkPingMessage);
@@ -26,13 +26,20 @@ const { pingMessage } = require('../builders/messageBuilder');
         } catch (err) {
           logger('error', err, 'PingTimer.setInterval:', address)
         }
-      }, 20000); // 30 second timeout
+      }, 20000); // 20 second interval
 
       // Listen for 
       socket.once('handshakeBroken', (err) => {
-        logger('error', err, 'ForeverLoop.handshakeBroken:', address);
+        
+        if (err) {
+          logger('error', err, 'ForeverLoop.handshakeBroken:', address);
+        } else {
+          logger('warn', 'ForeverLoop.handshakeBroken:', address);
+        }
+
         handshakeComplete = false;
-        clearInterval(pingTimer); // clean up
+        clearInterval(socket._pingTimer); // clean up
+        socket._pingTimer = null;
         resolve(false); // exits with promise with false if the handshake is broken
       });
 

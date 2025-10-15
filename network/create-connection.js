@@ -7,6 +7,7 @@ const createConnection = (port, host) => {
   return new Promise((resolve, reject) => { 
 
     const socket = net.createConnection({ port, host });
+    let cleanedUp = false;
 
     /**
      * Socket functions
@@ -14,21 +15,42 @@ const createConnection = (port, host) => {
 
     // Comprehensive cleanup to prevent data leaks
     const cleanup = (err) => {
+
+      if (cleanedUp) return;
+      cleanedUp = true;
+
       logger('warn', 'Cleaning up....');
-      socket.emit('handshakeBroken');
+
+      // Clear ping timer first
+      if (socket._pingTimer) {
+        clearInterval(socket._pingTimer);
+        socket._pingTimer = null;
+      }
+
+      // Emit handshake broken BEFORE removing listeners so that foreverloop can hear it
+      socket.emit('handshakeBroken', err);
+
+      // Now safe to remove all listeners
       socket.removeAllListeners();
       socket._buffer = null;  // Clear buffer
-      if (socket) {
+
+      // Close Socket
+      try {
         socket.end();
+      } catch { }     // Ignore possible error as socket has already been closed
+
+      // Destroy Socket
+      try {
         if (err) {
           socket.destroy(err);
         } else {
-          socket.destroy(); // Gracefully destroy without error
+          socket.destroy();
         }
-      }
+      } catch { }   // Ignore possible error as socket has already been destroyed
+
     }
 
-    socket.cleanup = cleanup;
+    socket._cleanup = cleanup;
 
     // Clear specific data listener
     socket.clearDataListener = (onData) => {
@@ -59,7 +81,6 @@ const createConnection = (port, host) => {
     socket.once('error', (err) => { 
       logger('error', err, 'CreateConnection - Error with', host, ':', port);
       cleanup(err);
-      logger('warn', 'Cleaned up...');
       reject(err);
     });
 
@@ -69,18 +90,15 @@ const createConnection = (port, host) => {
       logger('warn', 'CreateConnection - Ending network connection', host, ':', port);
     })
 
-    // On close
+    // on close
     socket.once('close', (err) => {
-      if(err) {
+      if (err) {
         logger('error', err, 'CreateConnection - Closing network connection with error', host, ':', port);
-        cleanup(err);
-        reject(err);
       } else {
         logger('warn', 'CreateConnection - Closing network connection without error', host, ':', port);
-        cleanup();
-        resolve();
       }
-    });
+      // Cleanup is handled externally - not here
+    })
 
   });
 }

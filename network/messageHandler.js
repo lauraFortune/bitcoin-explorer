@@ -7,7 +7,6 @@ const { setLatestBlock } = require('../store/blockData'); // Global variable - s
 const { setLatestTx } = require('../store/txData'); // Global variable - stores latest tx 
 const { broadcast } = require('../broadcast');
 
-console.log(broadcast);
 
 const getBlocks = (socket, address) => {
   const networkBlockMessage = getBlocksMessage();

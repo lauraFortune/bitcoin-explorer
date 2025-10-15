@@ -32,7 +32,7 @@ const websocketSetup = (server, btc_port) => {
         
         // Close active BTC socket - if exists
         if (activeSocket) {
-          activeSocket.cleanup();
+          activeSocket._cleanup();
           activeSocket = null;
         }
       });
@@ -43,7 +43,7 @@ const websocketSetup = (server, btc_port) => {
 
         // Clean up BTC socket if user closes browser without closing connection
         if (activeSocket) {
-          activeSocket.cleanup();
+          activeSocket._cleanup();
           activeSocket = null;
         }
       });

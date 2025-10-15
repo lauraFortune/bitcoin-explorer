@@ -6,8 +6,9 @@ const handshake = require('./handshake');
 const foreverLoop = require('./foreverLoop');
 
 
+
 const loadConnection = async (btc_port, btc_host, onSocketConnected) => {
-  try {
+
     logger('info', 'BTC Port:', btc_port);
     logger('info', 'Node:', btc_host);
 
@@ -16,13 +17,23 @@ const loadConnection = async (btc_port, btc_host, onSocketConnected) => {
 
 
     if (!addresses || addresses.length === 0){
-      throw new Error('No addresses returned:', btc_host);
+      logger('error', 'No addresses returned:', btc_host);
+      return;
     }
-    await connection(btc_port, addresses, onSocketConnected); // Initiates node connection process
-  } catch (err) { 
-    logger('error', err, 'LoadConnection Error with', btc_host);
-    return;
-  }
+
+    // Keep trying with while loop
+    while (true) {
+      const connected = await connection(btc_port, addresses, onSocketConnected); // Initiates node connection process
+      if (connected) {
+        break;
+      } else {
+        // If connection failed, wait before retrying
+        logger('warn', 'Connection failed, retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+    }
+
 };
 
 
@@ -57,8 +68,11 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
   
   if (!handshakeComplete) { // If no success after for loop complete
     logger('warn', 'Connection.handshake Failed');
-    loadConnection(btc_port, addresses, onSocketConnected); // Reload Connection & loop through addresses again
+    return false; // Returns false if not connected
+  } else {
+    return true; // Retrurns true if connected
   }
+  
 };
 
 
