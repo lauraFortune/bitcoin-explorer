@@ -1,6 +1,6 @@
 const { Server } = require('socket.io');
 const { logger } = require('./utils/logHandler');
-const { loadConnection: connectToNode } = require('./network/connection');
+const { loadConnection: connectToNode, abortConnection } = require('./network/connection');
 const { setIoInstance } = require('./broadcast');
 
 let io;
@@ -40,6 +40,8 @@ const websocketSetup = (server, btc_port) => {
       ws.on('stop', () => {
         console.log('stopping websocket....');
         logger('info', 'Stop streaming Bitcoin data');
+
+        abortConnection();
         
         // Close active BTC socket - if exists
         if (activeSocket) {
@@ -55,6 +57,8 @@ const websocketSetup = (server, btc_port) => {
       ws.on('disconnect', () => {
         console.log('disconnecting websocket....');
         logger('info', 'a user disconnected');
+
+        abortConnection();
 
         // Clean up BTC socket if user closes browser without closing connection
         if (activeSocket) {

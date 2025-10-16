@@ -5,34 +5,55 @@ const getIps = require('./dns-resolver');
 const handshake = require('./handshake');
 const foreverLoop = require('./foreverLoop');
 
+let aborted = false;
+let currentSocket = null;
 
+const abortConnection = () => {
+  aborted = true;
+
+  if (currentSocket) {
+    try {
+      currentSocket._cleanup();
+    } catch (err) {
+      logger('warn', 'Cleanup failed during abort:', err.message);
+    }
+    currentSocket = null;
+  }
+  logger('info', 'Connection attempts aborted');
+}
 
 const loadConnection = async (btc_port, btc_host, onSocketConnected) => {
 
-    logger('info', 'BTC Port:', btc_port);
-    logger('info', 'Node:', btc_host);
+  aborted = false;
 
-    // Checks if ip address is DNS Seed (String), in which case resolve them, else list of ip addresses 
-    const addresses = typeof(btc_host) === 'string' ? await getIps(btc_host) : btc_host;
+  logger('info', 'BTC Port:', btc_port);
+  logger('info', 'Node:', btc_host);
 
+  // Checks if ip address is DNS Seed (String), in which case resolve them, else list of ip addresses 
+  const addresses = typeof(btc_host) === 'string' ? await getIps(btc_host) : btc_host;
 
-    if (!addresses || addresses.length === 0){
-      logger('error', 'No addresses returned:', btc_host);
-      return;
+  if (!addresses || addresses.length === 0){
+    logger('error', 'No addresses returned:', btc_host);
+    return;
+  }
+
+  // Keep trying with while loop
+  while (!aborted) {
+    const connected = await connection(btc_port, addresses, onSocketConnected); // Initiates node connection process
+    if (connected) {
+      break;
+    } else {
+      if (aborted) break;
+      // If connection failed, wait before retrying
+      logger('warn', 'Connection failed, retrying in 2 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    // Keep trying with while loop
-    while (true) {
-      const connected = await connection(btc_port, addresses, onSocketConnected); // Initiates node connection process
-      if (connected) {
-        break;
-      } else {
-        // If connection failed, wait before retrying
-        logger('warn', 'Connection failed, retrying in 2 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
+  }
 
-    }
+  if (aborted) {
+    logger('info', 'loadConnection: Aborted by user');
+  }
 
 };
 
@@ -41,11 +62,24 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
   let handshakeComplete = false;
 
   for (const address of addresses) { 
-    if (handshakeComplete) break; // Failsafe - If successful handshake, break out of for loop
+    if (handshakeComplete) break; // If successful handshake, break
+    if (aborted) break;           // If connection has been aborted, break
 
     try {
       const socket = await createConnection(btc_port, address); // Create TCP connection to Bitcoin network address
+      currentSocket = socket;
+
+      if (aborted) {
+        socket._cleanup();
+        break;
+      }
+
       const performHandshake = await handshake(socket, address);
+
+      if (aborted) {
+        socket._cleanup();
+        break;
+      }
       
       if(performHandshake === true) { // On Success
         handshakeComplete = true; // Update variable
@@ -54,14 +88,17 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
         if (onSocketConnected) { onSocketConnected(socket) }
 
         await foreverLoop(socket, address); // awaits - async function 'foreverloop' with successfull address
+        currentSocket = null;
         break; // Exits for loop
       } else { // Else unsuccessful handshake
-        socket.destroy(); // Close connection
+        socket._cleanup(); // Cleans up and calls socket.destroy internally
+        currentSocket = null;
         continue; // Continue to next function
       }
 
     } catch (err) { // Catch - node connection errors
       logger('error', err, 'Connection Error');
+      currentSocket = null;
       return;
     } 
   };// end for loop 
@@ -79,4 +116,5 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
 
 module.exports = {
   loadConnection,
+  abortConnection,
 }
