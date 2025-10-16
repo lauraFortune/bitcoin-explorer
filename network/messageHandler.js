@@ -35,7 +35,7 @@ const handleVerack = (socket, address) => {
   socket.emit('performedHandshake'); // Emit successful handshake event - updates handshake function
 
   broadcast(`performed handshake with ${address}`);
-  getBlocks(socket, address);
+  // getBlocks(socket, address);
 }
 
 const handlePing = (socket, address) => {

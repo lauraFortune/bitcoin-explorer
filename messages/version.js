@@ -18,7 +18,7 @@ class Version {
     nonce = crypto.randomBytes(8), // crypto lib generates secure 8 byte random nonce
     user_agent = '/bitcoin-explorer:0.1/', // default no agent name
     last_block = 0,
-    relay = false,
+    relay = true,
   } = {}) {
     // initialises Version with default valeues if none provided
     this.command = 'version';
