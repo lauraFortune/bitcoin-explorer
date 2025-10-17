@@ -1,7 +1,7 @@
 
 const { logger } = require('../utils/logHandler');
 const crypto = require('crypto');
-const { intToLittleEndian, ipToBuffer } = require('../utils/helper');
+const { intToLittleEndian, signedIntToLittleEndian, intToBigEndian, encodeVarInt, ipToBuffer } = require('../utils/helper');
 
 
 class Version {
@@ -41,19 +41,19 @@ class Version {
     // serialises version fields into buffer of bytes for transmission over the Bitcoin network
     try{
       return Buffer.concat([
-        intToLittleEndian(this.version, 4), // 4 byte buffer
+        signedIntToLittleEndian(this.version, 4), // 4 byte buffer
         intToLittleEndian(this.services, 8), // 8 byte buffer
-        intToLittleEndian(this.timestamp, 8), // 8 byte buffer
+        signedIntToLittleEndian(this.timestamp, 8), // 8 byte buffer
         intToLittleEndian(this.receiver_services, 8), // 8 byte buffer
         this.receiverIp, // 16 byte buffer - in correct format
-        intToLittleEndian(this.receiver_port, 2), // 2 byte buffer
+        intToBigEndian(this.receiver_port, 2), // 2 byte buffer
         intToLittleEndian(this.sender_services, 8), // 8 byte buffer
         this.senderIp, // 16 byte buffer - in correct format
-        intToLittleEndian(this.sender_port, 2), // 2 byte buffer
+        intToBigEndian(this.sender_port, 2), // 2 byte buffer
         this.nonce, // 8 byte buffer - in correct format
-        intToLittleEndian(this.user_agent.length, 1), // converts user agent length to 1 byte buffer
-        this.user_agent, // 1 byte buffer
-        intToLittleEndian(this.last_block, 4), // 4 byte buffer
+        encodeVarInt(this.user_agent.length), // converts user agent length to CompactSize length (varint)
+        this.user_agent, // user agent bytes
+        signedIntToLittleEndian(this.last_block, 4), // 4 byte buffer
         Buffer.from([this.relay ? 0x01: 0x00]) // converts to 1 byte buffer
       ]);
     } catch (err) {

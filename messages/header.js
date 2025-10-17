@@ -1,5 +1,5 @@
 const { logger } = require('../utils/logHandler');
-const { hash256, intToLittleEndian, littleEndianToInt } = require('../utils/helper');
+const { hash256, intToLittleEndian, littleEndianToBigInt } = require('../utils/helper');
 
 require('dotenv').config();
 
@@ -40,7 +40,7 @@ class Header {
       const command = buffer.slice(4, 16).toString('ascii').replace(/\0/g, ''); // Extracts and removes null chars
       const magicNumber = buffer.slice(0, 4).toString('hex'); // Bitcoin magic number
       const payloadBuffer = buffer.slice(16, 20); // Extracts payload buffer
-      const payloadLength = littleEndianToInt(payloadBuffer); // Converts to int
+      const payloadLength = littleEndianToBigInt(payloadBuffer); // Converts to int
       const checksum = buffer.slice(20, 24).toString('hex'); // Checksum as hex string
     
       // Returns parsed header elements as object

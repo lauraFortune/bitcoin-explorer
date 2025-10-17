@@ -1,0 +1,13 @@
+
+Bitcoin P2P Protocol Helper Functions (see utils/helper.js)
+
+Endianness Rules
+- Most multi-byte integers are transmitted in little-endian
+- Exceptions: Network addresses and ports use big-endian
+
+Usage:
+- intToLittleEndian(int, byteLengh)     --> use for almost all multi-byte integers
+- intToBigEndian(int, byteLengh)        --> use for ports (uint16 big-endian)
+- ipToBuffer(ipAddress)                 --> use for network addresses (16 byte big-endian)
+
+
