@@ -146,8 +146,7 @@
 
         <!-- Buttons -->
         <div class="flex gap-3">
-          <button id="connect-btn" type="button" class="px-8 py-3 text-white text-xs uppercase tracking-wider font-semibold transition-colors bg-jet hover:bg-jet/80 disabled:opacity-50 disabled:pointer-events-none">Connect</button>
-          <button id="disconnect-btn" type="button" class="px-8 py-3 border-2 border-jet/20 text-jet text-xs uppercase tracking-wider font-semibold hover:border-jet transition-colors">Disconnect</button>
+          <button id="connect-btn" type="button" class="px-8 py-3 text-white text-xs uppercase tracking-wider font-semibold transition-colors bg-jet hover:bg-jet/80">Connect</button>
           <button id="reset-button" type="button" class="px-8 py-3 border-2 border-jet/20 text-jet text-xs uppercase tracking-wider font-semibold hover:border-jet transition-colors">Reset</button>
         </div>
 
@@ -350,7 +349,6 @@
       const dnsSeedSelect = document.getElementById('dns-seed');
       const ipAddressInput = document.getElementById('ip-address');
       const connectBtn = document.getElementById('connect-btn');
-      const disconnectBtn = document.getElementById('disconnect-btn');
       const resetButton = document.getElementById('reset-button');
       // Stats Section
       const blockCounter = document.getElementById('blockCounter');
@@ -477,54 +475,58 @@
 
       // Connect Button
       connectBtn.addEventListener('click', () => {
-        const dnsSeed = dnsSeedSelect.value.trim();
-        const ipAddress = ipAddressInput.value.trim();
 
-        // Validate - One field must be selected/entered to start connection
-        if (!dnsSeed && !ipAddress) {
-          alert('Please select a DNS seed or enter a valid IP address');
-          return;
-        }
 
-        // Clear previous connection data from frontend
-        blockTable.clear().draw();
-        txTable.clear().draw();
-        consoleOutput.textContent = '';
-        blocks = 0;
-        transactions = 0;
-        blockCounter.textContent = '0';
-        txCounter.textContent = '0';
+        if (statusLabel.textContent === 'Connected') {
+          // DISCONNECT
+          socket.emit('stop');
 
-        // Start streaming data to UI
-        attachBtcHandler()
-        streamToUI = true;
-
-        socket.emit('start', { dnsSeed, ipAddress });
-        // Update Status
-        statusDot.classList.remove('bg-pink');
-        statusDot.classList.add('bg-lime');
-        statusLabel.textContent = 'Connected';
-        connectBtn.disabled = true;
-        console.log(`Connect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
-      });
-
-      
-
-      // Disconnect Button
-      disconnectBtn.addEventListener('click', () => {
-        socket.emit('stop');
-
-        // Stop streaming data to UI
-        detachBtcHandler();
-        streamToUI = false;  
+          // Stop streaming data to UI
+          detachBtcHandler();
+          streamToUI = false;  
+          
+          // Update Status
+          statusDot.classList.remove('bg-lime');
+          statusDot.classList.add('bg-pink');
+          statusLabel.textContent = 'Disconnected';
+          connectBtn.textContent = 'Connect';
+          console.log(`Disconnect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
         
-        // Update Status
-        statusDot.classList.remove('bg-lime');
-        statusDot.classList.add('bg-pink');
-        statusLabel.textContent = 'Disconnected';
-        connectBtn.disabled = false;
-        console.log(`Disconnect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
+        } else {
+          // CONNECT
+          const dnsSeed = dnsSeedSelect.value.trim();
+          const ipAddress = ipAddressInput.value.trim();
+
+          // Validate - One field must be selected/entered to start connection
+          if (!dnsSeed && !ipAddress) {
+            alert('Please select a DNS seed or enter a valid IP address');
+            return;
+          }
+
+          // Clear previous connection data from frontend
+          blockTable.clear().draw();
+          txTable.clear().draw();
+          consoleOutput.textContent = '';
+          blocks = 0;
+          transactions = 0;
+          blockCounter.textContent = '0';
+          txCounter.textContent = '0';
+
+          // Start streaming data to UI
+          attachBtcHandler()
+          streamToUI = true;
+
+          socket.emit('start', { dnsSeed, ipAddress });
+          // Update Status
+          statusDot.classList.remove('bg-pink');
+          statusDot.classList.add('bg-lime');
+          statusLabel.textContent = 'Connected';
+          connectBtn.textContent = 'Disconnect';
+          console.log(`Connect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
+        }
+       
       });
+
 
       // Reset Button
       resetButton.addEventListener('click', () => {
@@ -548,7 +550,7 @@
         statusDot.classList.remove('bg-lime');
         statusDot.classList.add('bg-pink');
         statusLabel.textContent = 'Disconnected';
-        connectBtn.disabled = false;
+        connectBtn.textContent = 'Connect';
       });
 
       /*
