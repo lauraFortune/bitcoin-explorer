@@ -4,6 +4,7 @@ const createConnection = require('./create-connection');
 const getIps = require('./dns-resolver');
 const handshake = require('./handshake');
 const foreverLoop = require('./foreverLoop');
+const net = require('net');
 
 let aborted = false;
 let currentSocket = null;
@@ -29,8 +30,8 @@ const loadConnection = async (btc_port, btc_host, onSocketConnected) => {
   logger('info', 'BTC Port:', btc_port);
   logger('info', 'Node:', btc_host);
 
-  // Checks if ip address is DNS Seed (String), in which case resolve them, else list of ip addresses 
-  const addresses = typeof(btc_host) === 'string' ? await getIps(btc_host) : btc_host;
+  const host = btc_host.trim();
+  const addresses = net.isIP(host) ? [host] : await getIps(host);
 
   if (!addresses || addresses.length === 0){
     logger('error', 'No addresses returned:', btc_host);
