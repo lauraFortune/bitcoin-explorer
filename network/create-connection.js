@@ -29,24 +29,14 @@ const createConnection = (port, host) => {
 
       // Emit handshake broken BEFORE removing listeners so that foreverloop can hear it
       socket.emit('handshakeBroken', err);
-
-      // Now safe to remove all listeners
-      socket.removeAllListeners();
-      socket._buffer = null;  // Clear buffer
+      socket.removeAllListeners();  // Now safe to remove all listeners
+      socket.on('error', () => {}); // Cleanup already happening (errors irrelevant) - catch and do nothing
+      socket._buffer = null;        // Clear buffer
 
       // Close Socket
-      try {
-        socket.end();
-      } catch { }     // Ignore possible error as socket has already been closed
-
+      try { socket.end() } catch {}     // Ignore possible error as socket has already been closed
       // Destroy Socket
-      try {
-        if (err) {
-          socket.destroy(err);
-        } else {
-          socket.destroy();
-        }
-      } catch { }   // Ignore possible error as socket has already been destroyed
+      try { err ? socket.destroy(err) : socket.destroy() } catch {}   // Ignore possible error as socket has already been destroyed
 
     }
 
@@ -81,20 +71,32 @@ const createConnection = (port, host) => {
     socket.once('error', (err) => { 
       logger('error', err, 'CreateConnection - Error with', host, ':', port);
       cleanup(err);
+      reject(err);
     });
 
             
     // On end 
     socket.once('end', () => {
       logger('warn', 'CreateConnection - Ending network connection', host, ':', port);
+      // Only emit handshakebroken event once
+      if (!socket._handshakeBrokenEmitted) {
+        socket._handshakeBrokenEmitted = true;
+        socket.emit('handshakeBroken', new Error('Peer closed connection - End event'));
+      }
     })
 
     // on close
-    socket.once('close', (err) => {
-      if (err) {
-        logger('error', err, 'CreateConnection - Closing network connection with error', host, ':', port);
+    socket.once('close', (hadErr) => { // close event passes boolean hadError
+      if (hadErr) {
+        logger('error', 'CreateConnection - Closing network connection with error', host, ':', port);
       } else {
         logger('warn', 'CreateConnection - Closing network connection without error', host, ':', port);
+      }
+      
+      // Only emit handshakebroken event once
+      if (!socket._handshakeBrokenEmitted) {
+        socket._handshakeBrokenEmitted = true;
+        socket.emit('handshakeBroken', new Error('Peer closed connection - Close event'));
       }
       // Cleanup is handled externally - not here
     })
