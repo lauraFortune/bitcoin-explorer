@@ -8,7 +8,24 @@ let activeSocket = null; // Store active BTC socket globally (single user suppor
 
 const websocketSetup = (server, btc_port) => {
   try {
-    io = new Server(server);
+
+    if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+      logger('error', 'Websocket.setup: CORS_ORIGIN must be set in production mode');
+      throw new Error('CORS_ORIGIN environment variable required for production')
+    }
+
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+      ? process.env.CORS_ORIGIN.split(',').map(url => url.trim()) // Prod mode - list of allowed domain urls
+      : true   // Dev mode - allow all urls
+    
+    io = new Server(server, {
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      cors: {
+        origin: allowedOrigins
+      }
+    });
+
     setIoInstance(io); // set the IO instance for broadcasting
 
     io.on('connection', (ws) => {
@@ -54,9 +71,9 @@ const websocketSetup = (server, btc_port) => {
         }
       });
   
-      ws.on('disconnect', () => {
+      ws.on('disconnect', (reason) => {
         console.log('disconnecting websocket....');
-        logger('info', 'a user disconnected');
+        logger('info', `a user disconnected: ${reason}`);
 
         abortConnection();
 
