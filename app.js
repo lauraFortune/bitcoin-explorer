@@ -8,6 +8,7 @@ const { logger } = require('./utils/logHandler');
 const btcRouter = require('./routes/btcRoutes');
 const { websocketSetup } = require('./websocket');
 const { errorHandler, unknownEndpoint } = require('./utils/middleware');
+const { startBlockchainSync } = require('./utils/bitcoinSync');
 
 const app = express();
 const server = http.createServer(app); // Pass express app to http server
@@ -45,3 +46,7 @@ websocketSetup(server, BTC_PORT);
 server.listen(PORT, () => {
   logger('info', 'Server listening on port 3000');
 });
+
+if (process.env.API_SYNC === 'true') {
+  startBlockchainSync();
+}
