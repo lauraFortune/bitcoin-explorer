@@ -1,6 +1,7 @@
 
 const dns = require('dns');
 const { logger } = require('../utils/logHandler');
+const { broadcast } = require('../broadcast');
 const { promisify } = require('util');
 
 // promises
@@ -8,42 +9,50 @@ const dnsResolve4 = promisify(dns.resolve4);
 const dnsResolve6 = promisify(dns.resolve6);
 
 /**
- * The getIps function returns arroy of valid IP addresses on the BTC network
+ * The getIps function returns array of valid IP addresses on the BTC network
  *  - A DNS seed is taken as a parameter
  *  - dns.resolve4: resolves all IPv4 addresses of given DNS Seed
- *  - dns.resolve6: resolves all ipv6 addesses of given DNS Seed
+ *  - dns.resolve6: resolves all IPv6 addresses of given DNS Seed
  */
 const getIps = async (dns_seed) => {
 
+  const dnsSeed = String(dns_seed || '').trim();
+  const ipv4 = [];
+  const ipv6 = [];
+
+  // Try resolve IPv4 addresses
   try {
-    const ipv4Addresses = await dnsResolve4(dns_seed);
-    const ipv6Addresses = await dnsResolve6(dns_seed);
-    const addresses = ipv4Addresses.concat(ipv6Addresses);
-
-    logger('info', 'IPV4 Addresses:', JSON.stringify(ipv4Addresses));
-    logger('info', 'IPV6 Addresses:', JSON.stringify(ipv6Addresses));
-    return addresses;
-
+    ipv4.push(...await dnsResolve4(dnsSeed));
   } catch (err) {
-    logger(err, 'Error resolving DNS Seed:', dns_seed);
+    logger('warn', `IPv4 lookup failed for ${dnsSeed}: ${err.code || err.message}`);
   }
 
+  // Try resolve IPv6 addresses
+  try {
+    ipv6.push(...await dnsResolve6(dnsSeed));
+  } catch (err) {
+    // ENODATA/ENOTFOUND means no IPv6 addresses found (not an error) -> ignore silently
+    if (err.code !== 'ENODATA' && err.code !== 'ENOTFOUND') {
+      logger('warn',  `IPv6 lookup failed for ${dnsSeed}: ${err.code || err.message}`);
+    }
+  }
+
+  // All resolved addresses
+  const addresses = ipv4.concat(ipv6);
+
+  if (addresses.length > 0) {
+    logger('info', 'IPV4 Addresses:', JSON.stringify(ipv4));
+    logger('info', 'IPV6 Addresses:', JSON.stringify(ipv6));
+
+    // Broadcast DNS resolution to frontend
+    broadcast({ type: 'dns-resolved', data: { seed: dnsSeed, ipv4: ipv4.length, ipv6: ipv6.length } });
+
+    return addresses;
+  }
+
+  logger('error', 'No addresses returned:', dnsSeed);
+  return [];
 }; 
 
+
 module.exports = getIps;
-
-
-
-
-
-/**
- * Response -
- * DNS Seed: seed.bitcoin.sipa.be,
- * IPv4 Addresses: 
- *    ["144.76.34.220","109.199.104.221","34.106.249.67","37.60.229.120",
- *     "167.114.210.19","104.1.92.17","13.244.104.103","104.196.231.248",
- *     "193.181.35.38","62.31.155.218","13.49.72.71","35.200.254.144",
- *     "78.46.66.15","209.141.52.59","74.96.184.197","34.105.209.243",
- *     "217.15.161.228","85.10.155.77","37.60.227.127","62.169.18.115",
- *     "68.69.170.92","139.59.92.87","97.113.55.243","91.183.207.58","213.199.55.104"]
- */
