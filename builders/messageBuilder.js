@@ -4,8 +4,10 @@ const Version = require('../messages/version');
 const Verack = require('../messages/verack');
 const Ping = require('../messages/ping');
 const Pong = require('../messages/pong');
+const SendHeaders = require('../messages/sendHeaders');
 const GetData = require('../messages/getData');
 const GetBlocks = require('../messages/getBlocks');
+const GetHeaders = require('../messages/getHeaders');
 
 
 /**
@@ -54,6 +56,24 @@ const pongMessage = () => {
   return networkMessage;
 }
 
+const sendHeadersMessage = () => {
+  const sendHeaders = new SendHeaders();
+  const serialisedSendHeaders = sendHeaders.serialise();
+  const header = new Header({ command: 'sendheaders', payload: serialisedSendHeaders });
+  const serialisedHeader = header.serialise();
+  const networkMessage = Buffer.concat([serialisedHeader, serialisedSendHeaders]);
+  return networkMessage;
+}
+
+const getHeadersMessage = (blockLocatorHashes) => {
+  const getHeaders = new GetHeaders({ blockLocatorHashes });
+  const serialisedGetHeaders = getHeaders.serialise();
+  const header = new Header({ command: 'getheaders', payload: serialisedGetHeaders });
+  const serialisedHeader = header.serialise();
+  const networkMessage = Buffer.concat([serialisedHeader, serialisedGetHeaders])
+  return networkMessage;
+};
+
 const getDataMessage = (invItems) => {
   const getData = new GetData(); // Creates new instance of GetData
   getData.loadInvData(invItems); // Loads inv data into GetData Message
@@ -64,22 +84,17 @@ const getDataMessage = (invItems) => {
   return networkMessage;
 }
 
-const getBlocksMessage = () => {
+const getBlocksMessage = ({ locatorHexLE, stopHexLE = '0000000000000000000000000000000000000000000000000000000000000000' } = {} ) => {  // stophexLE = '000...00' - Gets blocks all the way up to tip
     const getBlocks = new GetBlocks({ 
-      version: 70015,
-      blockLocatorHashes: [
-        '09f8fd6ba6f0b6d5c207e8fcbcf50f46876a5deffbac4701d7d0f13f00000000', 
-        '161126f0d39ec082e51bbd29a1dfb40b416b445ac8e493f88ce9938600000000', 
-        '378a6f6593e2f0251132d96616e837eb6999bca963f6675a0c7af18000000000',
-        '161126f0d39ec082e51bbd29a1dfb40b416b445ac8e493f88ce9938600000000'],
-      hashStop: '9a22db7fd25e719abf9e8ccf869fbbc1e22fa71822a37efae054c17b00000000' }); 
+      blockLocatorHashes: locatorHexLE,
+      hashStop: stopHexLE,
+    }); 
     const serialisedGetBlocks = getBlocks.serialise();
     const header = new Header({ command: 'getblocks', payload: serialisedGetBlocks });
     const serialisedHeader = header.serialise();
     const networkMessage = Buffer.concat([serialisedHeader, serialisedGetBlocks]);
     return networkMessage;
-  }
-
+}
 
 
 module.exports = {
@@ -89,4 +104,6 @@ module.exports = {
   getBlocksMessage,
   pingMessage,
   pongMessage,
+  sendHeadersMessage,
+  getHeadersMessage
 };

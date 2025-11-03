@@ -4,7 +4,7 @@ const { logger } = require('../utils/logHandler');
 
 
 class GetBlocks {
-  constructor({ version, blockLocatorHashes, hashStop } = {}) {
+  constructor({ version = 70015, blockLocatorHashes, hashStop } = {}) {
     this.command = 'getblocks';
     this.version = version;
     this.blockLocatorHashes = blockLocatorHashes;
@@ -21,13 +21,13 @@ class GetBlocks {
 
       const hashCountBuffer = encodeVarInt(this.blockLocatorHashes.length);
 
-      const blockHashLoctorBuffer = Buffer.concat(this.blockLocatorHashes.map(blockHash => {
+      const blockHashLocatorBuffer = Buffer.concat(this.blockLocatorHashes.map(blockHash => {
         return Buffer.from(blockHash, 'hex');
       }))
 
       const hashStopBuffer = Buffer.from(this.hashStop, 'hex');
 
-      return Buffer.concat([ versionBuffer, hashCountBuffer, blockHashLoctorBuffer, hashStopBuffer]);
+      return Buffer.concat([ versionBuffer, hashCountBuffer, blockHashLocatorBuffer, hashStopBuffer]);
     } catch (err) {
       logger('error', 'GetBlocks.serialise', err);
       return null;
