@@ -64,7 +64,7 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
 
   for (const address of addresses) { 
     if (handshakeComplete) break; // If successful handshake, break
-    if (aborted) break;           // If connection has been aborted, break
+    if (aborted) break;           // Connection manually aborted by user
 
     try {
       const socket = await createConnection(btc_port, address); // Create TCP connection to Bitcoin network address
@@ -88,9 +88,17 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
         // Call back runs and global activeSocket is updated
         if (onSocketConnected) { onSocketConnected(socket) }
 
-        await foreverLoop(socket, address); // awaits - async function 'foreverloop' with successfull address
+        // Only returns when peer becomes unstable
+        const peerStable = await foreverLoop(socket, address); // awaits - async function 'foreverloop' with successfull address 
         currentSocket = null;
-        break; // Exits for loop
+        
+        if (peerStable === false) {
+          handshakeComplete = false;
+          if (aborted) break;         // Connection manually aborted by user
+          logger('warn', 'Peer connection unstable, trying next address...');
+          continue;
+        }
+
       } else { // Else unsuccessful handshake
         socket._cleanup(); // Cleans up and calls socket.destroy internally
         currentSocket = null;
@@ -98,9 +106,9 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
       }
 
     } catch (err) { // Catch - node connection errors
-      logger('error', err, 'Connection Error');
+      logger('error', err, 'Connection failed trying next peer');
       currentSocket = null;
-      return;
+      continue;
     } 
   };// end for loop 
   
