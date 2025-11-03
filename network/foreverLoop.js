@@ -1,5 +1,6 @@
 
 const { logger } = require('../utils/logHandler');
+const { broadcast } = require('../broadcast');
 const commandHandler = require('../network/commandHandler');
 const { pingMessage } = require('../builders/messageBuilder');
 
@@ -10,7 +11,7 @@ const { pingMessage } = require('../builders/messageBuilder');
  */
   const foreverLoop = async (socket, address) => {
     return new Promise((resolve) => {
-      logger('success', '❤️❤️ Entering Foreverloop with', address, '❤️❤️');
+      logger('success', 'Entering Foreverloop with: ', address );
       let handshakeComplete = true; // need to pass to command handler for switch logic
   
       // Listens and responds to incoming messages by type
@@ -18,11 +19,11 @@ const { pingMessage } = require('../builders/messageBuilder');
     
       // Ping node every 30 seconds to keep connection alive
       socket._pingTimer = setInterval(() => {
-        try{
+        try {
           const networkPingMessage = pingMessage();
           socket.write(networkPingMessage);
-          logger('info', 'ForeverLoop.pingTimer: Handshake Status:', handshakeComplete);
           logger('info', 'ForeverLoop.pingTimer: Sent Message Ping to:', address);
+          broadcast(`Sent ping to ${address}`);
         } catch (err) {
           logger('error', err, 'PingTimer.setInterval:', address)
         }
