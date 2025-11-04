@@ -2,6 +2,7 @@ const { logger } = require('../utils/logHandler');
 const { verackMessage, getBlocksMessage, pongMessage, getDataMessage } = require("../builders/messageBuilder");
 const Inv = require('../messages/inv');
 const Block = require('../messages/block');
+const Headers = require('../messages/headers');
 const Transaction = require('../messages/tx');
 const { setLatestBlock } = require('../store/blockData'); // Global variable - stores latest block
 const { setLatestTx } = require('../store/txData'); // Global variable - stores latest tx 
@@ -71,7 +72,7 @@ const handleInv = (socket, address, payload) => {
   logger('info', 'MessageHandler - Sent GetData to', address);
 }
 
-const handleBlock = (address, payload) => {
+const handleBlock = (socket, address, payload) => {
   logger('block', 'MessageHandler - Received Block from', address);
   const parsedBlock = Block.parse(payload);
   if (parsedBlock) {
@@ -103,6 +104,28 @@ const handleTx = (address, payload) => {
   }
 }
 
+const handleHeaders = (socket, address, payload) => {
+  
+  const parsedHeaders = Headers.parse(payload);
+
+  if (!parsedHeaders) {
+    logger('error', 'MessageHandler - Failed to parse headers from', address);
+    return;
+  }
+  
+  logger('info', 'MessageHandler - Received headers from', address);
+  broadcast({ type: 'headers', data: { count: parsedHeaders.count }});
+
+}
+
+const handleNotFound = (socket, address, payload) => {
+  const parsedInv = Inv.parse(payload);
+  const missing = parsedInv && parsedInv.inventory ? parsedInv.inventory.filter(i => i.type === 2) : [];
+
+  if (missing.length > 0) {
+    logger('warn', `MessageHandler - Notfound for ${missing.length} blocks from ${address}`);
+  }
+}
 module.exports = {
   handleVersion,
   handleVerack,
@@ -111,5 +134,7 @@ module.exports = {
   handlePong,
   handleInv,
   handleBlock,
-  handleTx
+  handleTx,
+  handleHeaders,
+  handleNotFound
 }
