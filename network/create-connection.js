@@ -27,17 +27,40 @@ const createConnection = (port, host) => {
         socket._pingTimer = null;
       }
 
+      // Clear headers timer
+      if (socket._headersTimer) {
+        clearInterval(socket._headersTimer);
+        socket._headersTimer = null;
+      }
+
+      // Clear activity timer
+      if (socket._activityTimer) {
+        clearInterval(socket._activityTimer);
+        socket._activityTimer = null;
+      }
+
       // Emit handshake broken BEFORE removing listeners so that foreverloop can hear it
       socket.emit('handshakeBroken', err);
-      socket.removeAllListeners();  // Now safe to remove all listeners
-      socket.on('error', () => {}); // Cleanup already happening (errors irrelevant) - catch and do nothing
-      socket._buffer = null;        // Clear buffer
+
+      // Now safe to remove all listeners
+      socket.removeAllListeners();    // Now safe to remove all listeners
+      socket.on('error', () => {});   // Cleanup already happening (errors irrelevant) - catch and do nothing
+      socket._buffer = null;          // Clear buffer
 
       // Close Socket
-      try { socket.end() } catch {}     // Ignore possible error as socket has already been closed
+      try { 
+        socket.end() 
+      } catch { }     // Ignore possible error as socket has already been closed
+      
       // Destroy Socket
-      try { err ? socket.destroy(err) : socket.destroy() } catch {}   // Ignore possible error as socket has already been destroyed
-
+      try { 
+        if (err) {
+          socket.destroy(err) 
+        } else {
+          socket.destroy()
+        }  
+      } catch { }   // Ignore possible error as socket has already been destroyed
+      
     }
 
     socket._cleanup = cleanup;
@@ -86,9 +109,9 @@ const createConnection = (port, host) => {
     })
 
     // on close
-    socket.once('close', (hadErr) => { // close event passes boolean hadError
-      if (hadErr) {
-        logger('error', 'CreateConnection - Closing network connection with error', host, ':', port);
+    socket.once('close', (err) => { // close event passes boolean hadError
+      if (err) {
+        logger('error', err, 'CreateConnection - Closing network connection with error', host, ':', port);
       } else {
         logger('warn', 'CreateConnection - Closing network connection without error', host, ':', port);
       }

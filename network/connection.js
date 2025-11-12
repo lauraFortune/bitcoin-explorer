@@ -64,7 +64,7 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
 
   for (const address of addresses) { 
     if (handshakeComplete) break; // If successful handshake, break
-    if (aborted) break;           // Connection manually aborted by user
+    if (aborted) break;           // If connection has been aborted, break
 
     try {
       const socket = await createConnection(btc_port, address); // Create TCP connection to Bitcoin network address
@@ -87,18 +87,18 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
 
         // Call back runs and global activeSocket is updated
         if (onSocketConnected) { onSocketConnected(socket) }
-
         // Only returns when peer becomes unstable
-        const peerStable = await foreverLoop(socket, address); // awaits - async function 'foreverloop' with successfull address 
+        const loopOk = await foreverLoop(socket, address); // awaits - async function 'foreverloop' with successfull address 
         currentSocket = null;
         
-        if (peerStable === false) {
-          handshakeComplete = false;
-          if (aborted) break;         // Connection manually aborted by user
-          logger('warn', 'Peer connection unstable, trying next address...');
-          continue;
+        if (loopOk === false) {
+          handshakeComplete = false;    // Remains 'not connected'
+          if (aborted) break;           // User pressed disconnect/rest
+          logger('warn', 'Peer closed connection, trying next address...');
+          continue;                     // Try next address in the list
         }
 
+        break;  // Only runs if foreverLoop returned truthy (shouldn't happen - always resolves false)
       } else { // Else unsuccessful handshake
         socket._cleanup(); // Cleans up and calls socket.destroy internally
         currentSocket = null;
@@ -106,9 +106,9 @@ const connection = async (btc_port, addresses, onSocketConnected) => {
       }
 
     } catch (err) { // Catch - node connection errors
-      logger('error', err, 'Connection failed trying next peer');
+      logger('error', err, 'Connection Error');
       currentSocket = null;
-      continue;
+      continue;     // Attempt next address
     } 
   };// end for loop 
   
