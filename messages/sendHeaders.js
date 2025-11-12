@@ -4,9 +4,10 @@ class SendHeaders {
     this.command = 'sendheaders';
   }
   serialise() {
-    return Buffer.alloc(0);
+    return Buffer.alloc(0);   // Returns empty payload
   }
 }
+
 
 module.exports = SendHeaders;
 

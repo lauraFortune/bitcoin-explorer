@@ -30,11 +30,12 @@ class GetData {
 
     const countEncoded = encodeVarInt(this.count); // Encode count as varInt
 
+    console.log(this.inventory);
     const itemsBuffer = Buffer.concat(this.inventory.map(item => {
 
       const typeBuffer = Buffer.alloc(4);
       typeBuffer.writeUInt32LE(item.type, 0);
-      // const hashBuffer = Buffer.from(item.hash, 'hex');
+      
       const hashBuffer = Buffer.isBuffer(item.hash) ? item.hash : Buffer.from(item.hash, 'hex');
       return Buffer.concat([typeBuffer, hashBuffer]);
 
