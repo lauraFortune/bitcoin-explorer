@@ -392,7 +392,7 @@
       let onBtcData = null;                  // btcData handler function - attach/detach
 
 
-      const socket = io('http://localhost:3000', { reconnection: false });
+      const socket = io();  // reconnect is enable by default 
 
       /*
       * SOCKET EVENT HANDLERS
@@ -403,35 +403,45 @@
         
         if (onBtcData) return;              // Handler already attached, don't attach twice
         
-        onBtcData = (data) => {
+        onBtcData = (message) => {
           if (!streamToUI) return;          // If not streaming BTC data to UI -> ignore
 
-          // Populate Console
-          consoleOutput.textContent += JSON.stringify(data, null, 2) + '\n\n';
-          consoleOutput.scrollTop = consoleOutput.scrollHeight; 
+          // Handle backend broadcasts --> Populate frontend console
+          if (typeof message === 'string') {
+            consoleOutput.textContent += message + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            return;
+          }
 
-          // Populate Tables and counters
-          if (data.command === 'block') {
+          // Handle messages by type --> Populate tables and counters
+          const { type, data } = message;
+
+          if (type === 'block') {
             blockTable.row.add([
               data.version,
               data.hash,
               data.timestamp,
               data.transaction_count,
-              data.difficulty
-            ]).draw(false);                 // False: don't redraw entire table
-            blocks++;
+              data.difficulty,
+            ]).draw(false);
+            blocks += 1;
             blockCounter.textContent = blocks;
-            } else if (data.command === 'tx') {
-              txTable.row.add([
+          } else if (type === 'tx') {
+            txTable.row.add([
               data.version,
               data.transaction_byte_size,
               data.inCount,
               data.outCount,
               data.lock_time,
             ]).draw(false);
-            transactions++;    
+            transactions += 1;
             txCounter.textContent = transactions;
           }
+
+          // Raw payload to console for debugging
+          consoleOutput.textContent += JSON.stringify({ type, data }, null, 2) + '\n\n';
+          consoleOutput.scrollTop = consoleOutput.scrollHeight; 
+
         };
 
 

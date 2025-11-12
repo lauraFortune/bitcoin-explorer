@@ -54,7 +54,7 @@ function processMessage(command, socket, address, payload) {
       handleBlock(socket, address, payload);
       break;
     case 'tx':
-      handleTx(address, payload);
+      handleTx(socket, address, payload);
       break;
     case 'notfound':
       handleNotFound(socket, address, payload);

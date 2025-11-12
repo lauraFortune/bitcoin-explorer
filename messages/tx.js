@@ -1,4 +1,5 @@
 
+// Stage 12 fix
 const { logger  } = require('../utils/logHandler');
 const { bufferToBigIntLE, decodeVarInt } = require('../utils/helper');
 
@@ -53,7 +54,7 @@ class Tx {
 
         if (scriptLength > buffer.length - offset) {
           logger('warn', 'Tx.parse - Script Length:', scriptLength, 'greater than bufferLength at offset', offset);
-          return { tx: null, newOffset: this.messageLength };
+          return { tx: null, newOffset: 0 };
         }
 
         const signatureScript = scriptLength > 0 ? buffer.slice(offset, offset + scriptLength) : '';
@@ -67,9 +68,15 @@ class Tx {
       const { value: outCount, size: outCountSize } = decodeVarInt(buffer, offset);
       offset += outCountSize;
 
-      if (outCount > 100) { // Large number to prevent parsing error
-        logger('warn', 'Tx.parse - OutCount:', outCount, 'greater than 100, Unrealistic output count ');
-        return { tx: null, newOffset: this.messageLength };
+      // if (outCount > 100) { // Large number to prevent parsing error
+      //   logger('warn', 'Tx.parse - OutCount:', outCount, 'greater than 100, Unrealistic output count ');
+      //   return { tx: null, newOffset: this.messageLength };
+      // }
+
+      const MAX_TX_SIZE = 1_000_000;  // 1MB - larger than any standard tx
+      if (messageLength > MAX_TX_SIZE) {
+        logger('warn', `TX.parse - Message size: ${messageLength} exceeds max size allowed`);
+        return { tx: null, newOffset: messageLength };
       }
 
       // Tx Out - Array[]: 9+ bytes
@@ -84,8 +91,8 @@ class Tx {
         offset += pkScriptLengthSize;
 
         if (pkScriptLength > buffer.length - offset) {
-          logger('warn', 'Tx.parse - Pk Script Length:', pkScriptLength, 'greater than buffer length at:', offset);
-          return { tx: null, newOffset: this.messageLength };
+          logger('warn', `Tx.parse - Pk Script Length: ${pkScriptLength} greater than buffer length at: ${offset}`);
+          return { tx: null, newOffset: 0 };
         }
 
         const pkScript = pkScriptLength > 0 ? buffer.slice(offset, offset + pkScriptLength) : '';
@@ -95,13 +102,14 @@ class Tx {
       }
 
       // if (offset + 4 > buffer.length) throw new Error('Buffer too short for lockTime');
-      const lockTime = buffer.readUInt32LE(messageLength - 4);
+      const lockTime = buffer.readUInt32LE(offset);
+      offset += 4;
 
-      return { tx: new Tx({ version, flag, inCount, txInArray, outCount, txOutArray, lockTime, messageLength }), newOffset: buffer.length };
+      return { tx: new Tx({ version, flag, inCount, txInArray, outCount, txOutArray, lockTime, messageLength }), newOffset: offset };
 
     } catch (err) {
       logger('error', err, 'Tx.parse');
-      return { tx: null, newOffset: this.messageLength };
+      return { tx: null, newOffset: 0 };
     }
   }
 
