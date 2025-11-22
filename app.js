@@ -44,7 +44,7 @@ websocketSetup(server, BTC_PORT);
 
 // Start express server
 server.listen(PORT, () => {
-  logger('info', 'Server listening on port 3000');
+  logger('info', `Server listening on port ${PORT}`);
 });
 
 if (process.env.API_SYNC === 'true') {

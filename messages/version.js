@@ -7,12 +7,12 @@ const { intToLittleEndian, signedIntToLittleEndian, intToBigEndian, encodeVarInt
 class Version {
   constructor({ // default values
     version = 70015,
-    services = 1,
+    services = 0,
     timestamp = Math.floor(Date.now() / 1000), // current dateTime
-    receiver_services = 1,
+    receiver_services = 0,
     receiverIp = '0.0.0.0',
     receiver_port = 8333,
-    sender_services = 1,
+    sender_services = 0,
     senderIp = '0.0.0.0',
     sender_port = 8333,
     nonce = crypto.randomBytes(8), // crypto lib generates secure 8 byte random nonce
