@@ -40,6 +40,80 @@
       border-radius: 0 !important;
     }
 
+    @layer components {
+      /* Table */
+      .table-wrap { 
+        @apply overflow-x-auto; 
+      }
+      .th { 
+        @apply text-xs uppercase tracking-wider text-jet/60 font-semibold; 
+      }
+      .td { 
+        @apply font-mono text-xs whitespace-nowrap; 
+      }
+      .num { 
+        @apply text-right tabular-nums; 
+      }
+
+      /* Truncated block hash */
+      .hash { 
+        @apply font-mono; 
+        display:inline-block; 
+        max-width: 36ch;          /* 36 characters */
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis;  /* '...' from overflow point */
+      }
+      
+      /* New Block arrival - Flash animation */
+      .new-row { 
+        animation: rowFlash 1.2s ease-out 1; 
+      }
+      @keyframes rowFlash {
+        0% { background: rgba(189, 251, 153, 0.6); }
+        100% { background: transparent; }
+      }
+    }
+
+    /* === DATATABLES OVERRIDES === */
+    
+    /* Hide length & search controls */
+    .dt-container .dt-length, 
+    .dt-container .dt-search { 
+      display: none; 
+    }
+
+    /* Make cells compact */
+    table.dataTable {
+      border-collapse: collapse !important;
+      border-spacing: 0 !important;
+    }
+
+    table.dataTable thead th,
+    table.dataTable tbody td {
+      padding: 10px 12px !important;
+      text-align: left !important;
+      box-sizing: border-box;
+    }
+
+    /* Fix block table layout */
+    #blockTable {
+      table-layout: fixed;
+      width: 100%;
+    }
+
+    #blockTable thead th,
+    #blockTable tbody td {
+      overflow: hidden;        
+      text-overflow: ellipsis;  /* show '...' at overflow point */
+      white-space: nowrap;      /* don't wrap text to second line */
+    }
+
+    /* Hide ordering/sorting arrows */
+    table.dataTable thead th .dt-column-order,
+    table.dataTable thead th .dt-ordering {
+      display: none !important;
+    }
 
   </style>
 
@@ -54,7 +128,7 @@
       <!-- Logo -->
       <div class="flex items-center gap-3">
         <div class="w-6 h-6 bg-jet"></div>
-        <span class="font-semibold tracking-wider text-xl uppercase">BitDot</span>
+        <span class="font-semibold tracking-wider text-xl uppercase">BitSync</span>
       </div>
 
       <!-- Nav Links -->
@@ -157,32 +231,78 @@
   <!-- Stats Section - White BG -->
   <section class="max-w-7xl mx-auto px-6 py-8">
     <div class="grid md:grid-cols-3 gap-4">
-
       <!-- Connection Card -->
       <div id="connection-card" class="bg-white border-4 border-jet/20 p-6">
         
         <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Connection</div>
-      
+        
         <div id="status" role="status" aria-live="polite" class="inline-flex items-center gap-3 text-2xl font-bold font-mono uppercase leading-none text-jet mb-2">
           <span id="status-dot" aria-hidden="true" class="inline-block size-5 shrink-0 bg-pink"></span>
           <span id="status-label">Disconnected</span>
         </div>
 
-        <div id="connection-node" class="text-xs text-jet/60 font-mono mb-1">Not Connected</div>
-        <div id="connection-ip" class="text-xs text-jet/40 font-mono">-</div>
+        <div id="connection-stage" class="text-xs text-jet/40 font-mono mb-3">Idle</div>
+
+        <!-- Bootstrap Progress -->
+        <div id="bootstrap-progress" class="hidden mb-3">
+          <div class="flex justify-between text-xs text-jet/60 mb-1">
+            <span>Syncing blocks</span>
+            <span id="bootstrap-count">0/10</span>
+          </div>
+          <div class="w-full bg-jet/10 h-1.5">
+            <div id="bootstrap-bar" class="bg-lime h-1.5 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      
+        <div id="connection-node" class="text-xs text-jet/60 font-mono mb-1">
+          <span class="text-jet/40">Node: </span>
+          <span id="node-seed">Not Connected</span>
+        </div>
+        <div id="connection-ip" class="text-xs text-jet/40 font-mono">
+          <span>Peer: </span>
+          <span id="peer-address">-</span>
+        </div>
       </div>
 
       <!-- Blocks Card -->
       <div class="bg-white border-4 border-jet/20 p-6">
-        <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Blocks</div>
+        <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Blocks Received</div>
         <div id="blockCounter" class="text-5xl font-bold font-mono text-jet">0</div>
+        <div id="block-activity" class="text-xs text-green/0 transition-all duration-300 mt-2">● Receiving...</div>
       </div>
 
+      <!-- Transactions Card -->
       <div class="bg-white border-4 border-jet/20 p-6">
-        <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Transactions</div>
+        <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Mempool Transactions</div>
         <div id="txCounter" class="text-5xl font-bold font-mono text-jet">0</div>
+        <div id="tx-activity" class="text-xs text-green/0 transition-all duration-300 mt-2">● Receiving...</div>
       </div>
-    
+
+    </div>
+  </section>
+
+  <!-- Latest Block - Preview -->
+  <section id="latest-block-section" class="max-w-7xl mx-auto px-6 pb-8 hidden">
+    <div class="bg-white border-4 border-jet/20 p-6">
+      <div class="text-xs uppercase tracking-wider text-jet/60 mb-4">Latest Block</div>
+      <div class="grid md:grid-cols-4 gap-4 text-sm font-mono">
+        <div>
+          <div class="text-xs text-jet/40 mb-1">Hash</div>
+          <div id="latest-hash" class="text-jet/80 truncate">-</div>
+        </div>
+        <div>
+          <div class="text-xs text-jet/40 mb-1">Timestamp</div>
+          <div id="latest-timestamp" class="text-jet/80">-</div>
+        </div>
+        <div>
+          <div class="text-xs text-jet/40 mb-1">Transactions</div>
+          <div id="latest-txcount" class="text-jet/80">-</div>
+        </div>
+        <div>
+          <div class="text-xs text-jet/40 mb-1">Difficulty</div>
+          <div id="latest-difficulty" class="text-jet/80">-</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -192,11 +312,11 @@
 
       <!-- Tab Buttons -->
       <div class="bg-white flex border-b-2 border-jet/20">
-        <button id="blocks-tab" data-tab="blocks-content" class="tab-btn px-6 py-4 text-xs uppercase tracking-wider border-b-4 border-jet text-jet font-semibold">
+        <button id="blocks-tab" data-tab="blocks-content" class="tab-button px-6 py-4 text-xs uppercase tracking-wider border-b-4 border-jet text-jet font-semibold">
           Blocks
         </button>
-        <button id="transactions-tab" data-tab="transactions-content" class="tab-btn px-6 py-4 text-xs uppercase tracking-wider border-b-4 border-transparent text-jet/60 hover:text-jet">
-          Transactions
+        <button id="transactions-tab" data-tab="transactions-content" class="tab-button px-6 py-4 text-xs uppercase tracking-wider border-b-4 border-transparent text-jet/60 hover:text-jet">  
+          Mempool Transactions
         </button>
         <div class="ml-auto px-6 py-4">
           <button class="text-xs text-jet/40 hover:text-jet uppercase tracking-wider">[?] About </button>
@@ -248,16 +368,15 @@
   <!-- Collapsible Console - Black BG -->
   <section class="max-w-7xl mx-auto px-6 pb-16">
     <div class="border-4 border-jet/20">
-      
       <!-- Console Header -->
       <button id="console-toggle" class="w-full px-6 py-4 flex items-center justify-between bg-jet border-b-2 border-jet/20 transition-colors">
         <div class="flex items-center gap-3">
           <span id="console-chevron" class="transition-transform text-mint">▶</span>
-          <span class="text-xs uppercase tracking-wider text-white/80">Activity Log</span>
-          <span class="text-xs text-white/40">[Click to expand]</span>
+          <span class="text-xs uppercase tracking-wider text-white/80">Network Log</span>
+          <span id="console-hint" class="text-xs text-white/40">[Click to expand]</span>
         </div>
         <div class="flex items-center gap-4">
-          <span class="text-xs font-mono uppercase text-green">● Live</span>
+          <span id="console-live-indicator" class="text-xs font-mono uppercase text-pink">● Idle</span>
         </div>
       </button>
     </div>
@@ -337,8 +456,18 @@
       */
      
       // Counters
-      let blocks = 0;           // Block Count
-      let transactions = 0;     // TX Count
+      let blocks = 0;                   // Block Count
+      let transactions = 0;             // TX Count
+      let renderedHashes = new Set();   // Track rendered blocks (table)
+
+      // Bootstrap Tracking
+      let bootstrapBlocks = 0;         // Counter: bootstrap blocks received
+      let bootstrapTotal = 10;         // Total amount of blocks to complete bootstrap
+      let isBootstrapping = false;     // Flag for bootstrapping phase 
+
+      // Connected Node Stats
+      let targetNode = '';             // User's input (DNS seed or IP address) from frontend 
+      let connectedPeer = '';          // Resolved Peer IP address from backend
 
      
       /*
@@ -350,20 +479,41 @@
       const ipAddressInput = document.getElementById('ip-address');
       const connectBtn = document.getElementById('connect-btn');
       const resetButton = document.getElementById('reset-button');
+      
       // Stats Section
       const blockCounter = document.getElementById('blockCounter');
       const txCounter = document.getElementById('txCounter');
       const statusDot = document.getElementById('status-dot');
       const statusLabel = document.getElementById('status-label');
+      const connectionStage = document.getElementById('connection-stage');
+      const blockActivity = document.getElementById('block-activity');
+      const txActivity = document.getElementById('tx-activity');
+      const nodeSeed = document.getElementById('node-seed');
+      const peerAddress = document.getElementById('peer-address');
+
+      // Bootstrap Progress
+      const bootstrapProgress = document.getElementById('bootstrap-progress');
+      const bootstrapCount = document.getElementById('bootstrap-count');
+      const bootstrapBar = document.getElementById('bootstrap-bar');
+
+      // Latest Block Preview
+      const latestBlockSection = document.getElementById('latest-block-section');
+      const latestHash = document.getElementById('latest-hash');
+      const latestTimestamp = document.getElementById('latest-timestamp');
+      const latestTxCount = document.getElementById('latest-txcount');
+      const latestDifficulty = document.getElementById('latest-difficulty');
+
       // Tabs Section
-      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabButtons = document.querySelectorAll('.tab-button');
       const tabContents = document.querySelectorAll('.tab-content');
       const consoleOutput = document.getElementById('console-output');
+
       // Console Section
       const toggleBtn = document.getElementById('console-toggle');
       const consoleWrapper = document.getElementById('console-wrapper');
       const chevron = document.getElementById('console-chevron');
-      
+      const consoleHint = document.getElementById('console-hint');
+      const consoleLiveIndicator = document.getElementById('console-live-indicator');
      
       /*
       * DATATABLES
@@ -374,15 +524,183 @@
         paging: true,
         pageLength: 10,
         ordering: true,
-        searching: true,
-        info: true,
-        lengthChange: true,
-      };
-      // Initialise Tables
-      const blockTable = new DataTable('#blockTable', tableOptions);    
-      const txTable = new DataTable('#txTable', tableOptions);      
+        deferRender: true,
+        autoWidth: false,         // disable auto width calculation
+        dom: 't<"dt-bottom"ip>',  // table + info + pager (hide length/search)
+        columnDefs: [
+          { targets: [0,1,2,3,4], className: 'td'},
+        ],
+        order: [[2, 'desc']],     // sort by timestamp column
+      }
 
+      // Initialise Tables
+      const blockTable = new DataTable('#blockTable', Object.assign({}, tableOptions, { columns: [ { width: '8ch' }, { width: '40ch' }, { width: '20ch' }, { width: '12ch' }, { width: '10ch' } ] }));    
+      const txTable = new DataTable('#txTable', tableOptions);  
+      
+      // Adjust columns after initialisation (and once more on next tick)
+      blockTable.columns.adjust();
+      txTable.columns.adjust();
+      setTimeout(() => {
+        try { blockTable.columns.adjust(); txTable.columns.adjust(); } catch {}
+      }, 0);
+
+      /*
+      * HELPER FUNCTIONS
+      */
+
+      // Connection goes through stages: idle -> connecting -> handshake -> syncing -> live
+      // Update text and color to signify each stage
+      function setConnectionStage(stage) {
+        const stages = {
+          'idle': { text: 'Idle', color: 'text-jet/40' },
+          'connecting': { text: 'Performing handshake...', color: 'text-yellow' },
+          'syncing': { text: 'Syncing recent blocks...', color: 'text-lime' },
+          'live': { text: 'Live ● Listening for new blocks', color: 'text-green' }
+        };
+        const config = stages[stage] || stages['idle'];
+        connectionStage.textContent = config.text;
+        connectionStage.className = `text-xs font-mono mb-3 ${config.color}`;
+      }
      
+      // Update and render bootstrap progress to user
+      function updateBootstrapProgress(current, total) {
+        // Update state variables
+        bootstrapBlocks = current;                  // Number of blocks bootstrapped (counter)
+        bootstrapTotal = total;                     // Number of blocks to bootstrap (10)
+        const percentage = (current / total) * 100; // Percentage of bootstrap complete
+
+        bootstrapCount.textContent = `${current}/${total}`  // e.g. "2/10"
+        bootstrapBar.style.width = `${percentage}%`;
+
+        // If bootstrap complete
+        if (current >= total) {
+          setTimeout(() => {
+            bootstrapProgress.classList.add('hidden');      // Hide progress bar
+            setConnectionStage('live');                     // Update connection stage
+            isBootstrapping = false;                        // Reset flag
+          }, 500);  // Timeout is triggered 500ms(1/2 sec) after bootstrap complete - delay so user sees "10/10" briefly
+        }
+      }
+
+      // Pads single digit numbers with leading zero
+      function padTwo(number) {
+        return String(number).padStart(2, '0');
+      }
+
+      // Format DateTime string to fixed width for consistency: YYYY-MM-DD HH:mm:ss 
+      function formatTime(dtString) {
+        const dtObject = new Date(dtString);                    // Convert dt string to date object
+        if (isNaN(dtObject)) return dtString;                   // If dateTime Object invalid return original dateTime string
+        return  `${dtObject.getUTCFullYear()}-${padTwo(dtObject.getUTCMonth()+1)}-${padTwo(dtObject.getUTCDate())} ${padTwo(dtObject.getUTCHours())}:${padTwo(dtObject.getUTCMinutes())}:${padTwo(dtObject.getUTCSeconds())}`;
+      }
+
+      // Add comma seperation for number readability
+      function comma(n) {
+        try {
+          return Number(n).toLocaleString();
+        } catch {
+          return String(n);
+        }
+      }
+
+      // Convert DateTime string to Unix epoch ms for numeric sorting
+      function epoch(dtString) {
+        const unixTime = Date.parse(dtString);  // Parses string to ms passed since Jan 1 1970
+        return isNaN(unixTime) ? 0 : unixTime;  // Return Unix Time or 0 (if invalid)
+      }
+
+      // Pulse activity indicator
+      function pulseActivity(element) {
+        element.className = 'text-xs text-green transition-all duration-300 mt-2';  // Flashes "Receiving..." for 1 sec
+        setTimeout(() => {  
+          element.className = 'text-xs text-green/0 transition-all duration-300 mt-2';
+        }, 1000); // Resets text to zero transparency after 1 sec
+      }
+
+      // Update UI (Latest Block Preview) with latest block data 
+      function updateLatestBlock(block) {
+        latestBlockSection.classList.remove('hidden');
+        // Truncate block hash --> e.g. 000000...1012e
+        latestHash.textContent = block.hash.substring(0, 6) + '...' + block.hash.substring(block.hash.length - 7);
+        latestTimestamp.textContent = formatTime(block.timestamp);
+        latestTxCount.textContent = block.transaction_count;
+        latestDifficulty.textContent = block.difficulty ? block.difficulty.toFixed(2) : '-';
+      }
+
+      // Copy text to clipboard using Clipboard API - silently fails if API unavailable or error
+      function copyText(text) {
+        return navigator.clipboard?.writeText(text).catch(()=>{});
+      }
+
+      // Adds timestamped network messages to frontend console
+      function addToConsole(msg, category='info', direction=null) {
+
+        // Skip line if identical to previous
+        if (addToConsole._last === msg) return;
+        addToConsole._last = msg;
+
+        // Get timestamp
+        const now = new Date();
+        const time = `${padTwo(now.getHours())}:${padTwo(now.getMinutes())}:${padTwo(now.getSeconds())}`;
+
+        // Get symbol
+        const symbol =
+          direction === 'outgoing' ? '→' :
+          direction === 'incoming' ? '←' :
+          category === 'success' ? '✓' :
+          category === 'warning' ? '⚠' :  
+          category === 'error' ? '✗' : '→';
+        
+        // Get text color
+        const colourClass = 
+          category === 'handshake' ? 'text-[#AED6EF]' :
+          category === 'live' ? 'text-green' :
+          category === 'sync' ? 'text-yellow' :
+          category === 'keepalive' ? 'text-pink' :
+          category === 'warning' ? 'text-yellow' :
+          category === 'error' ? 'text-pink' :
+          category === 'success' ? 'text-white/90' : 'text-white/70';
+
+        // Get Message to display
+        // If message type present (first word in caps), extract and wrap in brackets
+        const match = msg.match(/^([A-Z]+)[\s:]/);
+        let formattedMessage = msg;
+
+        if (match) {
+          const msgType = match[1];
+          const rest = msg.substring(msgType.length).replace(/^[\s:]+/, '');
+          formattedMessage = `<span class="font-bold">[${msgType}]</span> ${rest}`;
+        }
+        
+        // Build DOM Elements
+        const line = document.createElement('div');
+        line.classList.add('console-line', colourClass); 
+
+        const timeSpan = document.createElement('span');
+        const symbolSpan = document.createElement('span');
+        symbolSpan.classList.add('font-black', 'text-2xl', 'px-2'); // Make symbol bolder
+        const msgSpan = document.createElement('span');
+
+        // Set content
+        timeSpan.textContent = time;
+        symbolSpan.textContent = symbol;
+        msgSpan.innerHTML = formattedMessage;
+
+        // Assemble and add to console
+        line.append(timeSpan, symbolSpan, msgSpan);
+        consoleOutput.appendChild(line);
+
+        // Ensure console is never more than 100 lines (keep newest)
+        while (consoleOutput.children.length > 100) {
+          consoleOutput.removeChild(consoleOutput.firstChild);
+        }
+
+        // Auto scroll to bottom
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+      }
+
+
       /*
       * SOCKET.IO CONNECTION
       */
@@ -406,42 +724,167 @@
         onBtcData = (message) => {
           if (!streamToUI) return;          // If not streaming BTC data to UI -> ignore
 
-          // Handle backend broadcasts --> Populate frontend console
+          // Handle backend broadcasts --> Populate frontend console & update UI cards
           if (typeof message === 'string') {
-            consoleOutput.textContent += message + '\n';
-            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            // Connection stage updates
+            if (message.includes('received version')) {
+              setConnectionStage('handshake');
+              addToConsole(`VERSION: Received from ${connectedPeer}`, 'handshake', 'incoming');
+            } else if (message.includes('sent verack')) {
+              addToConsole(`VERACK: Sent to ${connectedPeer}`, 'handshake', 'outgoing');
+            } else if (message.includes('received verack')) {
+              setConnectionStage('syncing');
+              bootstrapProgress.classList.remove('hidden');
+              isBootstrapping = true;
+              addToConsole(`VERACK: Handshake complete • P2P connection active`, 'success');
+
+              // Update status UI (connecting -> connected)
+              statusDot.classList.remove('bg-yellow', 'bg-pink');
+              statusDot.classList.add('bg-lime');
+              statusLabel.textContent = 'Connected';
+              connectBtn.textContent = 'Disconnect';
+              connectBtn.disabled = false;
+              connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else if (message.includes('sent ping')) {
+              addToConsole(`PING: Sent to ${connectedPeer}`, 'keepalive', 'outgoing');
+            } else if (message.includes('received ping')) {
+              addToConsole(`PING: Received from ${connectedPeer}`, 'keepalive', 'incoming');
+            } else if (message.includes('sent pong')) {
+              addToConsole(`PONG: Sent to ${connectedPeer}`, 'keepalive', 'outgoing');
+            } else if (message.includes('received pong')) {
+              addToConsole(`PONG: Received from ${connectedPeer}`, 'keepalive', 'incoming');
+            } else {
+              addToConsole(message);
+            }
+
             return;
           }
 
           // Handle messages by type --> Populate tables and counters
           const { type, data } = message;
 
-          if (type === 'block') {
-            blockTable.row.add([
-              data.version,
-              data.hash,
-              data.timestamp,
-              data.transaction_count,
-              data.difficulty,
-            ]).draw(false);
-            blocks += 1;
-            blockCounter.textContent = blocks;
-          } else if (type === 'tx') {
-            txTable.row.add([
-              data.version,
-              data.transaction_byte_size,
-              data.inCount,
-              data.outCount,
-              data.lock_time,
-            ]).draw(false);
-            transactions += 1;
-            txCounter.textContent = transactions;
+          // Peer connection info
+          if (type === 'peer-connected') {
+            connectedPeer = data.address;
+            peerAddress.textContent = data.address;
+            addToConsole(`TCP: Connection established to ${data.address}:8333`, 'handshake', 'incoming');
+            return;
           }
 
-          // Raw payload to console for debugging
-          consoleOutput.textContent += JSON.stringify({ type, data }, null, 2) + '\n\n';
-          consoleOutput.scrollTop = consoleOutput.scrollHeight; 
+          // DNS resolution
+          if (type === 'dns-resolved') {
+            const ipv4Count = data.ipv4 || 0;
+            const ipv6Count = data.ipv6 || 0;
+            addToConsole(`DNS: Resolved ${data.seed} -> ${ipv4Count} IPv4, ${ipv6Count} IPv6 addresses`, 'handshake', 'incoming');
+            return;
+          }
 
+          // GETBLOCKS request
+          if (type === 'getblocks-sent') {
+            addToConsole(`GETBLOCKS: Requesting recent block inventory`, 'sync', 'outgoing');
+            return;
+          }
+
+          // GETDATA request
+          if (type === 'getdata-sent') {
+            const count = data.count || 0;
+            addToConsole(`GETDATA: Requesting ${count} block${count > 1 ? 's' : ''}`, 'sync', 'outgoing');
+            return;
+          }
+
+          // INV accouncement - only log if blocks present
+          if (type === 'inv') {
+            const blockCount = data.blockCount || 0;
+            const txCount = data.txCount || 0;
+            if (blockCount > 0) {
+              const parts = [`${blockCount} block${blockCount > 1 ? 's' : ''}`];
+              if (txCount > 0) parts.push(`${txCount} tx${txCount > 1 ? 's': ''}`);
+              addToConsole(`INV: Peer announcing ${parts.join(', ')}`, 'sync', 'incoming');
+            }
+            return;
+          }
+
+          // HEADERS message
+          if (type === 'headers') {
+            const count = Number(data.count) || 0;
+            if (count > 0) {
+              const isLivePush = count <= 10 && !isBootstrapping;
+              const category = isLivePush ? 'live' : 'sync';
+              const context = isLivePush ? '(proactive push via SENDHEADERS)' : '';
+              addToConsole(`HEADERS: Received ${count} block header${count > 1 ? 's' : ''} ${context}`, category, 'incoming');
+            }
+            return;
+          }
+
+          // SENDHEADERS activation
+          if (type === 'sendheaders-active') {
+            setConnectionStage('live');
+            addToConsole('SENDHEADERS: Enabled (BIP 130) • Peer pushes new blocks automatically', 'live', 'incoming');
+            return;
+          }
+
+          // BLOCK received
+          if (type === 'block') {
+            if (renderedHashes.has(data.hash)) return;
+            renderedHashes.add(data.hash);
+
+            // Update bootstrap progress
+            if (isBootstrapping && bootstrapBlocks < bootstrapTotal) {
+              updateBootstrapProgress(bootstrapBlocks + 1, bootstrapTotal);
+            }
+
+            const txCount = Number(data.transaction_count) || 0;
+            const diff = Number(data.difficulty) || 0;
+
+            // Format hash 000000...d8fb292
+            const hashDisplay = `${data.hash.substring(0, 6)}...${data.hash.substring(data.hash.length - 7)}`;
+
+            // Add row to table with formatted cells
+            const node = blockTable.row.add([
+              `<span data-order="${Number(data.version) || 0}">${data.version ?? ''}</span>`,
+              `<span class="hash" title="${data.hash}">${hashDisplay}</span> <button type="button" class="text-xs text-jet/60 hover:text-jet" data-copy="${data.hash}">copy</button>`,
+              `<span data-order="${epoch(data.timestamp)}">${formatTime(data.timestamp)}</span>`,
+              `<span class="num" data-order="${txCount}">${comma(txCount)}</span>`,
+              `<span class="num" data-order="${diff}">${comma(diff)}</span>`
+            ]).draw(false).node();
+
+            // Flash animation
+            if (node) {
+              node.classList.add('new-row');
+              setTimeout(() => node.classList.remove('new-row'), 1200);
+            }
+
+            // Update UI
+            blockCounter.textContent = ++blocks;
+            pulseActivity(blockActivity);
+            updateLatestBlock({ hash: data.hash, timestamp: data.timestamp, transaction_count: txCount, difficulty: diff });
+          
+            // Console
+            const category = isBootstrapping ? 'sync' : 'live';
+            const prefix = isBootstrapping ? `BLOCK #${blocks}` : 'BLOCK (LIVE)';
+            addToConsole(`${prefix}: ${data.hash} • ${comma(txCount)} txs`, category, 'incoming');
+            return;
+          }
+
+          // Transaction received
+          if (type === 'tx') {
+            txTable.row.add([
+              data.version ?? '',
+              data.transaction_byte_size ?? '',
+              data.inCount ?? '',
+              data.outCount ?? '',
+              data.lock_time ?? ''
+            ]).draw(false);
+
+            txCounter.textContent = ++transactions;
+            pulseActivity(txActivity);
+
+            // Show hint once
+            if (!onBtcData._txHintShown) {
+              addToConsole('Mempool transactions streaming in background (view Mempool tab)', 'success');
+              onBtcData._txHintShown = true;
+            }
+          }
         };
 
 
@@ -487,21 +930,29 @@
       connectBtn.addEventListener('click', () => {
 
 
-        if (statusLabel.textContent === 'Connected') {
+        if (statusLabel.textContent === 'Connected' || statusLabel.textContent === 'Connecting...') {
           // DISCONNECT
           socket.emit('stop');
 
           // Stop streaming data to UI
           detachBtcHandler();
-          streamToUI = false;  
+          streamToUI = false; 
+          
+          // Update console live indicator
+          consoleLiveIndicator.textContent = '● Idle';
+          consoleLiveIndicator.className = 'text-xs font-mono uppercase text-pink';
+
+          // Reset connection card
+          nodeSeed.textContent = 'Not Connected';
+          peerAddress.textContent = '-';
           
           // Update Status
-          statusDot.classList.remove('bg-lime');
+          statusDot.classList.remove('bg-lime', 'bg-yellow');
           statusDot.classList.add('bg-pink');
           statusLabel.textContent = 'Disconnected';
           connectBtn.textContent = 'Connect';
-          console.log(`Disconnect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
-        
+          connectBtn.disabled = false;
+          connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
           // CONNECT
           const dnsSeed = dnsSeedSelect.value.trim();
@@ -522,21 +973,47 @@
           blockCounter.textContent = '0';
           txCounter.textContent = '0';
 
+          // Reset bootstrap state
+          renderedHashes.clear()
+          isBootstrapping = false;
+          bootstrapBlocks = 0;
+          bootstrapProgress.classList.add('hidden');
+          bootstrapBar.style.width = '0%';
+          bootstrapCount.textContent = '0/10';
+          latestBlockSection.classList.add('hidden');
+          setConnectionStage('idle');
+
           // Start streaming data to UI
           attachBtcHandler()
           streamToUI = true;
 
           socket.emit('start', { dnsSeed, ipAddress });
+
+          // Update node/peer labels
+          if (dnsSeed) {
+            targetNode = dnsSeed;
+            nodeSeed.textContent = targetNode;
+            peerAddress.textContent = 'Resolving...';
+          } else {
+            targetNode = ipAddress;
+            nodeSeed.textContent = '';
+            peerAddress.textContent = ipAddress;
+          }
+          
+          // Update console live indicator
+          consoleLiveIndicator.textContent = '● Live';
+          consoleLiveIndicator.className = 'text-xs font-mono uppercase text-green';
+
           // Update Status
           statusDot.classList.remove('bg-pink');
-          statusDot.classList.add('bg-lime');
-          statusLabel.textContent = 'Connected';
-          connectBtn.textContent = 'Disconnect';
-          console.log(`Connect clicked! Status Dot: ${statusDot}, Status Label: ${statusLabel}`);
+          statusDot.classList.add('bg-yellow');
+          statusLabel.textContent = 'Connecting';
+          connectBtn.textContent = 'Connecting...';
+          connectBtn.disabled = true;
+          connectBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
        
       });
-
 
       // Reset Button
       resetButton.addEventListener('click', () => {
@@ -553,14 +1030,30 @@
         transactions = 0;
         blockCounter.textContent = '0';
         txCounter.textContent = '0';
+        // Reset bootstrap state
+        renderedHashes.clear();
+        isBootstrapping = false;
+        bootstrapBlocks = 0;
+        bootstrapProgress.classList.add('hidden');
+        bootstrapBar.style.width = '0%';
+        bootstrapCount.textContent = '0/10';
+        latestBlockSection.classList.add('hidden');
+        setConnectionStage('idle');
         // Reset Connection Inputs
         dnsSeedSelect.value = '';
         ipAddressInput.value = '';
+
+        // Reset Connection card labels
+        nodeSeed.textContent = 'Not Connected';
+        peerAddress.textContent = '-';
+
         // Update Status
-        statusDot.classList.remove('bg-lime');
+        statusDot.classList.remove('bg-lime', 'bg-yellow');
         statusDot.classList.add('bg-pink');
         statusLabel.textContent = 'Disconnected';
         connectBtn.textContent = 'Connect';
+        connectBtn.disabled = false;
+        connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
       });
 
       /*
@@ -568,8 +1061,10 @@
       */
       toggleBtn.addEventListener('click', () => {
         consoleWrapper.classList.toggle('hidden');
-        chevron.textContent = consoleWrapper.classList.contains('hidden') ? '▶' : '▼';
-      })
+        const isHidden = consoleWrapper.classList.contains('hidden');
+        chevron.textContent = isHidden ? '▶' : '▼';
+        consoleHint.textContent = isHidden ? '[Click to expand]' : '[Click to collapse]'
+      });
 
 
       /*
@@ -601,6 +1096,13 @@
         });
       });
 
+      // Copy button delegate for hash copy buttons in tables
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-copy]');
+        if (!btn) return;
+        const val = btn.getAttribute('data-copy');
+        if (val) copyText(val);
+      });
     })
   </script>
 

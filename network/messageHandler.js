@@ -123,6 +123,9 @@ const handleVersion = (socket, address) => {
   logger('info', 'MessageHandler - Received Version', address);
   broadcast(`received version from ${address}`);
 
+  // Broadcast peer connection info
+  broadcast({ type: 'peer-connected', data: { address } });
+
   const networkVerackMessage = verackMessage();
   socket.write(networkVerackMessage);
   logger('info', 'MessageHandler - Sent Verack to', address);

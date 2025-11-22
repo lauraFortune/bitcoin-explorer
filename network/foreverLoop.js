@@ -24,7 +24,7 @@ const foreverLoop = async (socket, address) => {
         const networkPingMessage = pingMessage();
         socket.write(networkPingMessage);
         logger('info', 'ForeverLoop.pingTimer: Sent Message Ping to:', address);
-        broadcast(`Sent ping to ${address}`);
+        broadcast(`sent ping to ${address}`);
       } catch (err) {
         logger('error', err, 'PingTimer.setInterval:', address)
       }
