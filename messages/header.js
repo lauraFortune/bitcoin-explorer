@@ -44,7 +44,6 @@ class Header {
       const checksum = buffer.slice(20, 24).toString('hex'); // Checksum as hex string
     
       // Returns parsed header elements as object
-      // TODO:
       return { magicNumber, command, payloadLength, checksum };
     } catch (err) {
       logger('error', 'Header.parse', err);

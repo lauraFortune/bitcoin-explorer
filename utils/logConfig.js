@@ -2,6 +2,8 @@
 const winston = require('winston');
 const { combine, timestamp, printf, colorize } = winston.format;
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 // custom setup
 const logLevels = {
   error: 0,
@@ -27,10 +29,11 @@ const logColours = {
 
 winston.addColors(logColours);
 
+
 // Create logger instance
 const log = winston.createLogger({
   levels: logLevels,
-  level: 'tx', // ensures all messages of 'success' level (5) or lower are logged 
+  level: isProduction ? 'info' : 'tx',  // Less verbose logging in production mode - ensures all messages of 'success' level (5) or lower are logged 
   format: combine(
     timestamp({
       format: 'YYYY-MM-DD hh:mm:ss.SSS A',
@@ -40,7 +43,7 @@ const log = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: '_logs/debug.log' }),
+    ...(!isProduction ? [new winston.transports.File({ filename: '_logs/debug.log' })] : [])  // Creates logs only in dev mode
   ]
 });
 

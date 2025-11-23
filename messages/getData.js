@@ -30,7 +30,6 @@ class GetData {
 
     const countEncoded = encodeVarInt(this.count); // Encode count as varInt
 
-    console.log(this.inventory);
     const itemsBuffer = Buffer.concat(this.inventory.map(item => {
 
       const typeBuffer = Buffer.alloc(4);

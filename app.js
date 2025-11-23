@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const bodyParser = require('body-parser');
 const { logger } = require('./utils/logHandler');
@@ -14,7 +16,16 @@ const app = express();
 const server = http.createServer(app); // Pass express app to http server
 
 // Middleware
-app.use(express.json())
+app.use(express.json());
+app.use(helmet({
+  contentSecurityPolicy: false // allow CDN dependencies and inline scripts
+}));
+// Rate limit: 
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // Limit each IP to 100 requests per window (15 minutes)
+  message: 'Too many requests from this IP, please try again later.',
+}));
 app.use(cors());
 dotenv.config();
 app.use(bodyParser.json());
