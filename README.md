@@ -1,8 +1,10 @@
-# Bitcoin Blockchain Explorer
+# Bitcoin Blockchain P2P Explorer
 
 A **Node.js** Bitcoin Blockchain explorer - streams real-time bitcoin data. Implemented in **pure Javascript** for learning purposes.
 
-[Live Demo](https://bitcoin-explorer-production.up.railway.app)
+**[Live Demo](https://bitcoin-explorer-production.up.railway.app)**
+
+![Bitsync - P2P Explorer Screenshot](./screenshots/demo.png)
 
 **Tech Stack**
 ---
