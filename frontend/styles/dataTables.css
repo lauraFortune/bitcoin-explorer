@@ -1,0 +1,40 @@
+
+/* === DATATABLES OVERRIDES === */
+
+/* Hide length & search controls */
+.dt-container .dt-length, 
+.dt-container .dt-search { 
+  display: none; 
+}
+
+/* Make cells compact */
+table.dataTable {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
+table.dataTable thead th,
+table.dataTable tbody td {
+  padding: 10px 12px !important;
+  text-align: left !important;
+  box-sizing: border-box;
+}
+
+/* Fix block table layout */
+#blockTable {
+  table-layout: fixed;
+  width: 100%;
+}
+
+#blockTable thead th,
+#blockTable tbody td {
+  overflow: hidden;        
+  text-overflow: ellipsis;  /* show '...' at overflow point */
+  white-space: nowrap;      /* don't wrap text to second line */
+}
+
+/* Hide ordering/sorting arrows */
+table.dataTable thead th .dt-column-order,
+table.dataTable thead th .dt-ordering {
+  display: none !important;
+}
